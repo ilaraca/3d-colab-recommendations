@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  avatar_url String?
+  created_at DateTime  @default(now())
+  orders     order[]
+  products   product[]
+}
+
+model product {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  category    String
+  price       Decimal     @db.Decimal(10, 2)
+  available   Boolean     @default(true)
+  created_at  DateTime    @default(now())
+  material    String
+  width       Float
+  height      Float
+  depth       Float
+  weight      Float
+  print_time  Int
+  user_id     Int
+  images      image[]
+  orderItems  orderItem[]
+  user        user        @relation(fields: [user_id], references: [id])
+  reviews     review[]
+  stl_file    stl_file?
+}
+
+model image {
+  id         Int      @id @default(autoincrement())
+  url        String
+  created_at DateTime @default(now())
+  product_id Int
+  product    product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model stl_file {
+  id         Int      @id @default(autoincrement())
+  url        String
+  filename   String
+  created_at DateTime @default(now())
+  product_id Int      @unique
+  product    product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model order {
+  id           Int         @id @default(autoincrement())
+  user_id      Int
+  order_number String      @unique
+  status       String      @default("completed")
+  created_at   DateTime    @default(now())
+  user         user        @relation(fields: [user_id], references: [id])
+  items        orderItem[]
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model orderItem {
+  id         Int     @id @default(autoincrement())
+  order_id   Int
+  product_id Int
+  quantity   Int     @default(1)
+  order      order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product    product @relation(fields: [product_id], references: [id])
+
+  @@index([order_id])
+  @@index([product_id])
+}
+
+model review {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  rating     Int
+  created_at DateTime @default(now())
+  product    product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([product_id])
+}
