@@ -19,7 +19,7 @@ Pagamentos (Mercado Pago), chat, escrow, upload, doações, admin e demais compl
 ## Setup rápido
 
 ```bash
-git clone https://github.com/SEU_USUARIO/3d-colab-recommendations.git
+git clone https://github.com/ilaraca/3d-colab-recommendations.git
 cd 3d-colab-recommendations
 cp .env.example .env
 
