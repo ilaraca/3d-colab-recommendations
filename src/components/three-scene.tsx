@@ -12,7 +12,8 @@ export default function ThreeScene({ url }: ThreeSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Setup
     const scene = new THREE.Scene();
@@ -20,16 +21,16 @@ export default function ThreeScene({ url }: ThreeSceneProps) {
 
     const camera = new THREE.PerspectiveCamera(
       50,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
+      container.clientWidth / container.clientHeight,
       0.1,
       1000
     );
     camera.position.set(0, 0, 4);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -67,9 +68,8 @@ export default function ThreeScene({ url }: ThreeSceneProps) {
 
     // Handle resize
     const handleResize = () => {
-      if (!containerRef.current) return;
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
@@ -80,8 +80,8 @@ export default function ThreeScene({ url }: ThreeSceneProps) {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
       renderer.dispose();
     };
