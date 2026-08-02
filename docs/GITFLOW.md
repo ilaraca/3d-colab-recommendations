@@ -55,13 +55,22 @@ npm run semver:calc
 
 ## Para colaboradores (fork / feature)
 
+**Regra:** toda branch `feature/*` **deve ser criada a partir de `develop`**, nunca de `main`.
+
 ```bash
-git fetch upstream
-git checkout -b feature/minha-feature upstream/develop
+# Opção A — script (recomendado)
+./scripts/new-feature.sh minha-feature
 git commit -m "feat(learn): adiciona painel de vetores"
-git push origin feature/minha-feature
-# Auto Pull Request abre PR → develop
+git push -u origin feature/minha-feature
+
+# Opção B — manual
+git fetch origin develop
+git checkout -b feature/minha-feature origin/develop
+git commit -m "feat(learn): adiciona painel de vetores"
+git push -u origin feature/minha-feature
 ```
+
+O **Git Flow Guard** bloqueia PRs de features criadas a partir de `main`. O **Auto Pull Request** abre o PR → `develop` no push.
 
 ## Para o maintainer (@ilaraca)
 

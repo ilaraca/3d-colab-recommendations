@@ -13,6 +13,7 @@
 ## Checklist
 
 - [ ] CI passou (`lint-test-build` + `validate-branch-flow`)
+- [ ] `feature/*` foi criada a partir de `develop` (não de `main`)
 - [ ] Testes adicionados/atualizados quando aplicável
 - [ ] Documentação atualizada quando aplicável
 

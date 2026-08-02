@@ -15,6 +15,7 @@
     "db:setup": "prisma migrate dev && npm run seed",
     "recommendations:train": "tsx src/scripts/train-recommendation-model.ts",
     "semver:calc": "tsx scripts/calculate-semver.ts",
+    "feature:new": "bash scripts/new-feature.sh",
     "studio": "prisma studio",
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit"
