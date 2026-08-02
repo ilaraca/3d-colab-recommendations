@@ -1,0 +1,61 @@
+name: Git Flow Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+jobs:
+  validate-branch-flow:
+    name: validate-branch-flow
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validar origem e destino do PR
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "Pull request: ${HEAD} → ${BASE}"
+
+          is_prefix() {
+            case "$1" in
+              "$2"*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          fail() {
+            echo "::error title=Git Flow violado::$1"
+            exit 1
+          }
+
+          case "$BASE" in
+            main)
+              if ! is_prefix "$HEAD" "release/" && ! is_prefix "$HEAD" "hotfix/"; then
+                fail "A branch \`main\` (produção) só aceita PRs vindos de \`release/*\` ou \`hotfix/*\`. Abra o PR a partir de uma release ou hotfix."
+              fi
+              ;;
+
+            develop)
+              if ! is_prefix "$HEAD" "feature/" \
+                && ! is_prefix "$HEAD" "hotfix/" \
+                && ! is_prefix "$HEAD" "release/" \
+                && [ "$HEAD" != "main" ]; then
+                fail "A branch \`develop\` aceita PRs de \`feature/*\`, \`hotfix/*\`, \`release/*\` (back-merge) ou \`main\` (sync pós-release)."
+              fi
+              ;;
+
+            release/*)
+              if [ "$HEAD" != "develop" ] && ! is_prefix "$HEAD" "feature/"; then
+                echo "::warning::Release branches normalmente recebem PR de \`develop\`. Origem atual: ${HEAD}"
+              fi
+              ;;
+
+            *)
+              if is_prefix "$HEAD" "feature/" && [ "$BASE" != "develop" ]; then
+                fail "Branches \`feature/*\` devem abrir PR para \`develop\`, não para \`${BASE}\`."
+              fi
+              ;;
+          esac
+
+          echo "Fluxo Git Flow validado com sucesso."

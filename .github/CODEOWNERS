@@ -1,0 +1,8 @@
+# Produção: somente @ilaraca pode aprovar merges em `main`.
+# O GitHub exige review de code owner quando branch protection
+# tiver "Require review from Code Owners" habilitado.
+
+/main/ @ilaraca
+
+# Releases também passam pelo maintainer antes de chegar em main.
+/release/ @ilaraca
