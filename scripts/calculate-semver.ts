@@ -136,6 +136,7 @@ function main(): SemverResult {
   };
 
   console.log(JSON.stringify(result));
+  return result;
 }
 
 main();
