@@ -43,6 +43,11 @@ export interface ScoredProduct {
   vector: number[];
 }
 
+export interface UserWithPurchases {
+  id: number;
+  purchases: RecommendationProduct[];
+}
+
 export interface RecommendationsResponse {
   items: Array<{
     id: number;
@@ -57,6 +62,8 @@ export interface RecommendationsResponse {
   }>;
   meta: {
     mode: 'personalized' | 'similar' | 'popular';
+    source?: 'ml' | 'content' | 'popular';
+    modelVersion?: string;
     totalCandidates: number;
     generatedAt: string;
   };

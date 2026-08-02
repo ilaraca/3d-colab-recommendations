@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
+import { buildContext } from './context';
 import { COMPLETED_ORDER_STATUSES } from './constants';
-import type { RecommendationProduct } from './types';
+import type { RecommendationContext, RecommendationProduct, UserWithPurchases } from './types';
 
 type ProductWithRelations = Awaited<ReturnType<typeof fetchAvailableProducts>>[number];
 
@@ -86,6 +87,66 @@ export async function fetchUserPurchaseHistory(userId: number) {
   }
 
   return { purchasedProductIds, purchasedProducts };
+}
+
+export async function fetchUsersWithPurchases(): Promise<UserWithPurchases[]> {
+  const orders = await prisma.order.findMany({
+    where: {
+      status: { in: [...COMPLETED_ORDER_STATUSES] },
+    },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              reviews: { select: { rating: true } },
+              _count: { select: { orderItems: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const usersMap = new Map<number, Map<number, RecommendationProduct>>();
+
+  for (const order of orders) {
+    if (!usersMap.has(order.user_id)) {
+      usersMap.set(order.user_id, new Map());
+    }
+    const userProducts = usersMap.get(order.user_id)!;
+
+    for (const item of order.items) {
+      if (!item.product.available) continue;
+      if (userProducts.has(item.product_id)) continue;
+
+      userProducts.set(
+        item.product_id,
+        mapProduct({
+          ...item.product,
+          user: { id: item.product.user_id, name: '', avatar_url: null },
+          images: [],
+        } as ProductWithRelations)
+      );
+    }
+  }
+
+  return [...usersMap.entries()].map(([id, productsMap]) => ({
+    id,
+    purchases: [...productsMap.values()],
+  }));
+}
+
+export async function loadTrainingDataFromPrisma(): Promise<{
+  users: UserWithPurchases[];
+  products: RecommendationProduct[];
+  context: RecommendationContext;
+}> {
+  const products = await fetchProductsForRecommendations();
+  const users = await fetchUsersWithPurchases();
+  const context = buildContext(products);
+
+  return { users, products, context };
 }
 
 export async function fetchProductById(productId: number): Promise<RecommendationProduct | null> {
