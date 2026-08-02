@@ -7,13 +7,13 @@ import * as tfCore from '@tensorflow/tfjs';
 
 let tf: typeof tfCore = tfCore;
 
+const TFJS_NODE_MODULE = '@tensorflow/tfjs-node';
+
 export async function getTensorFlow(): Promise<typeof tfCore> {
   if (process.env.TFJS_USE_NODE === '1') {
     try {
-      // webpackIgnore evita que o Next.js tente resolver o pacote opcional no build
-      const tfNode = await import(
-        /* webpackIgnore: true */ '@tensorflow/tfjs-node'
-      );
+      // Variável evita resolução estática pelo TypeScript/webpack; pacote é opcional
+      const tfNode = await import(/* webpackIgnore: true */ TFJS_NODE_MODULE);
       tf = tfNode as unknown as typeof tfCore;
     } catch {
       // fallback para @tensorflow/tfjs
