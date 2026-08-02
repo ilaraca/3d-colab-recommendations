@@ -20,6 +20,19 @@ Trabalho acumulado em `develop` até a primeira release estável (`1.0.0`).
 - Seed Prisma com 20 produtos, 4 makers, 2 compradores com históricos distintos e STLs de demonstração
 - Docker Compose (PostgreSQL + pgAdmin) e `.env.example` para setup local
 
+#### Docker — stack completa
+
+- `Dockerfile` multi-stage (deps → builder → runner) com Next.js `output: standalone`
+- Serviço `app` no `docker-compose.yaml` — aplicação Next.js containerizada na porta 3000
+- `docker/entrypoint.sh` — `prisma migrate deploy` automático antes de iniciar o servidor
+- `docker/setup.sh` + `npm run docker:setup` — aguarda Postgres saudável, migrate e seed
+- Scripts npm: `docker:up`, `docker:down`, `docker:reset`, `docker:logs`
+- Volume `ml_models` — persiste modelos ML uploadados/treinados em `models/recommendations/`
+- Healthcheck no PostgreSQL 16; defaults para variáveis `POSTGRES_*` e `NEXTAUTH_*`
+- Profile `setup` (one-shot) para migrate + seed via container builder
+- Dependência **sharp** para otimização de imagens (`next/image`) em produção/Docker
+- `.dockerignore` para contexto de build enxuto
+
 #### Fase 1 — Content-based
 
 - Pipeline `contexto → encode → similaridade de cosseno → ranking`
@@ -77,21 +90,31 @@ Trabalho acumulado em `develop` até a primeira release estável (`1.0.0`).
 
 #### Documentação e assets
 
-- README com setup, demos, laboratório e orientação para clonar `develop`
+- README expandido (~1000 linhas): índice, referência da API, seção Docker, troubleshooting, deploy
+- Spec de deploy e proteção do upload em `docs/deployment/spec.md` (draft)
 - Documentação completa em `docs/recommendations/` (fases, lab, fluxogramas)
 - Guia Git Flow em `docs/GITFLOW.md`
+- `CHANGELOG.md` (Keep a Changelog)
 - Gerador de STLs de demonstração (`npm run assets:stl`)
 - Imagens, avatares e modelos STL em `public/`
 - Licença MIT
 
 ### Changed
 
-- README atualizado para refletir Fase 1 + Fase 2 + `/learn` e a branch correta de clone (`develop`)
+- README reestruturado: Opção A (Docker) e Opção B (dev local), seção Docker dedicada, link ao CHANGELOG
+- Preview 3D (STL): pré-carregamento do bundle Three.js, spinner de loading, cleanup de memória e pixel ratio limitado
+- `docker-compose.yaml`: Postgres 16 Alpine, serviço `app`, healthchecks e volumes nomeados
+- `.env.example` com comentários para `DATABASE_URL` local vs Docker
 - Configuração Next.js/Webpack para ignorar `@tensorflow/tfjs-node` opcional no bundle
 - Seed e assets alinhados às personas e produtos da demo ao vivo
 
 ### Fixed
 
+- Cleanup do Three.js ao desmontar preview 3D (geometry, material, animation frame)
+- Ruído do TensorFlow.js silenciado nos testes unitários
+- Build Docker: `npm ci --ignore-scripts` + `prisma generate` no stage correto (evita erro de schema ausente)
+- Postgres `exited (1)` no Docker — defaults de env, healthcheck e script `docker:reset` para volumes incompatíveis
+- Erro `sharp missing in production` no standalone — sharp + `@img/*` copiados para imagem final
 - Resolução TypeScript / bundle do `@tensorflow/tfjs-node` opcional
 - Retorno em `scripts/calculate-semver.ts` para o build/CI
 - Auto-PR usando GitHub API (sem depender do `gh` CLI no runner)
@@ -102,8 +125,8 @@ Trabalho acumulado em `develop` até a primeira release estável (`1.0.0`).
 ### Security / notas de escopo
 
 - Credenciais demo fixas (`demo123`) — intencionais para aula e demo ao vivo
-- `/api/learn/upload-model` sem autenticação — adequado ao lab local; não expor em produção pública sem proteção
-- Modelos treinados em `models/recommendations/` não versionados (artefato gerado)
+- `/api/learn/upload-model` sem autenticação — adequado ao lab local; spec de proteção em `docs/deployment/spec.md`
+- Modelos treinados em `models/recommendations/` não versionados (artefato gerado; volume Docker `ml_models` persiste em runtime)
 
 ### Planned
 
