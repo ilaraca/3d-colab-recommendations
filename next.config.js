@@ -2,6 +2,7 @@
 const webpack = require('webpack');
 
 const nextConfig = {
+  output: 'standalone',
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {

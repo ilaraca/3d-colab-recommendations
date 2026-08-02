@@ -51,6 +51,12 @@ export default function ProductPage() {
     if (params.id) fetchProduct();
   }, [params.id]);
 
+  useEffect(() => {
+    if (product?.stl_file) {
+      void import('@/components/stl-preview');
+    }
+  }, [product?.stl_file]);
+
   if (loading) {
     return <div className="container py-8">Carregando...</div>;
   }
