@@ -71,10 +71,44 @@ Documentação completa das fases: [`docs/recommendations/`](./docs/recommendati
 npm run test:unit
 ```
 
+## Fase 2 — Rede neural (TensorFlow.js)
+
+Treinar o modelo de classificação binária (comprou / não comprou):
+
+```bash
+npm run recommendations:train
+```
+
+Isso gera `models/recommendations/` (modelo + `metadata.json`). A API passa a usar ML automaticamente:
+
+```
+GET /api/recommendations?source=auto   # ML com fallback content-based (default)
+GET /api/recommendations?source=ml     # força ML (503 se modelo ausente)
+GET /api/recommendations?source=content # Fase 1 (cosseno)
+```
+
+> Usa `@tensorflow/tfjs` (pure JS). Para treino mais rápido, instale opcionalmente `@tensorflow/tfjs-node` e rode com `TFJS_USE_NODE=1 npm run recommendations:train`.
+
+## Laboratório interativo (`/learn`)
+
+Rota educacional para aprender o pipeline de ML com TensorFlow.js:
+
+- **Vetores** — perfil numérico de Maria vs João, pesos das features
+- **Treino TF** — playground no browser com gráfico de loss/val_loss
+- **Comparar** — content-based vs rede neural lado a lado
+- **Missões guiadas** — checklist com progresso salvo no navegador
+
+Acesse: http://localhost:3000/learn
+
+**Novidades (curto prazo):**
+- Toggle **Auto / Content / ML / Ambos** no marketplace (logado)
+- Botão **Aplicar no marketplace** após treinar no browser
+- Tabela de pares de treino, tooltips nas features e quiz rápido
+
 ## Roadmap
 
 - [x] Fase 1 — Content-based (cosseno)
-- [ ] Fase 2 — Rede neural (`@tensorflow/tfjs-node`)
+- [x] Fase 2 — Rede neural (`@tensorflow/tfjs`)
 - [ ] Fase 3 — Embeddings / two-tower
 
 ## Licença
