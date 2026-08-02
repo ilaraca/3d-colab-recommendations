@@ -115,6 +115,8 @@ Acesse: http://localhost:3000/learn
 
 Branches: `main` (produção) · `develop` (integração) · `feature/*` · `release/*` · `hotfix/*`
 
+**Features:** criar sempre a partir de `develop` → `./scripts/new-feature.sh nome-da-feature`
+
 Colaboradores abrem PRs de `feature/*` → `develop`. Releases vão de `release/*` → `main` (aprovação exclusiva de @ilaraca).
 
 Guia completo: [`docs/GITFLOW.md`](./docs/GITFLOW.md)

@@ -1,0 +1,167 @@
+name: Auto Release Sync
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-develop-to-release:
+    name: sync-develop-to-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Calcular versão semver
+        id: semver
+        run: |
+          RESULT=$(npx tsx scripts/calculate-semver.ts)
+          echo "$RESULT"
+          echo "result<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$RESULT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Interpretar semver
+        id: meta
+        run: |
+          echo '${{ steps.semver.outputs.result }}' > /tmp/semver.json
+          RELEASABLE=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/semver.json','utf8')).releasable")
+          NEXT=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/semver.json','utf8')).nextVersion")
+          CURRENT=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/semver.json','utf8')).currentVersion")
+          BUMP=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/semver.json','utf8')).bump")
+          HIGHLIGHTS=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/semver.json','utf8')).highlights.join('\\n- ')")
+
+          echo "releasable=${RELEASABLE}" >> "$GITHUB_OUTPUT"
+          echo "next_version=${NEXT}" >> "$GITHUB_OUTPUT"
+          echo "current_version=${CURRENT}" >> "$GITHUB_OUTPUT"
+          echo "bump=${BUMP}" >> "$GITHUB_OUTPUT"
+          echo "release_branch=release/${NEXT}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "highlights<<EOF"
+            echo "- ${HIGHLIGHTS}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Sem commits releasáveis
+        if: steps.meta.outputs.releasable != 'true'
+        run: |
+          echo "Nenhum commit convencional (feat/fix/perf/BREAKING) desde v${{ steps.meta.outputs.current_version }}."
+          echo "PR develop → release não será aberto."
+
+      - name: Criar ou atualizar branch release
+        if: steps.meta.outputs.releasable == 'true'
+        env:
+          RELEASE_BRANCH: ${{ steps.meta.outputs.release_branch }}
+          NEXT_VERSION: ${{ steps.meta.outputs.next_version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -q "$RELEASE_BRANCH"; then
+            echo "Branch $RELEASE_BRANCH já existe."
+          else
+            git checkout -b "$RELEASE_BRANCH" origin/main
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = process.env.NEXT_VERSION;
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            git add package.json
+            git commit -m "chore(release): prepara release v${NEXT_VERSION}"
+            git push origin "$RELEASE_BRANCH"
+            echo "Branch $RELEASE_BRANCH criada a partir de main."
+          fi
+
+      - name: Abrir PR develop → release
+        if: steps.meta.outputs.releasable == 'true'
+        uses: actions/github-script@v7
+        env:
+          RELEASE_BRANCH: ${{ steps.meta.outputs.release_branch }}
+          NEXT_VERSION: ${{ steps.meta.outputs.next_version }}
+          CURRENT_VERSION: ${{ steps.meta.outputs.current_version }}
+          BUMP: ${{ steps.meta.outputs.bump }}
+          HIGHLIGHTS: ${{ steps.meta.outputs.highlights }}
+        with:
+          script: |
+            const head = 'develop';
+            const base = process.env.RELEASE_BRANCH;
+            const version = process.env.NEXT_VERSION;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            try {
+              const { data: existing } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${head}`,
+                base,
+                state: 'open',
+              });
+
+              if (existing.length > 0) {
+                core.notice(`PR #${existing[0].number} já aberto: develop → ${base}`);
+                core.info(existing[0].html_url);
+                return;
+              }
+
+              const bumpLabel = {
+                major: 'MAJOR (breaking change)',
+                minor: 'MINOR (feat)',
+                patch: 'PATCH (fix/perf)',
+              }[process.env.BUMP] ?? process.env.BUMP;
+
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: `develop → ${base} (v${version})`,
+                head,
+                base,
+                body: [
+                  '## Release sync automático',
+                  '',
+                  `Integração de \`develop\` em \`${base}\` via workflow **Auto Release Sync**.`,
+                  '',
+                  '### Versionamento semântico',
+                  `| Campo | Valor |`,
+                  `|-------|-------|`,
+                  `| Versão atual (main) | v${process.env.CURRENT_VERSION} |`,
+                  `| Próxima versão | **v${version}** |`,
+                  `| Bump | ${bumpLabel} |`,
+                  '',
+                  '### Commits incluídos',
+                  process.env.HIGHLIGHTS || '_Ver diff_',
+                  '',
+                  '### Próximos passos (Git Flow)',
+                  `1. Merge este PR → atualiza \`${base}\``,
+                  '2. **Auto Release PR** abre PR `release/*` → `main`',
+                  '3. Aprovação @ilaraca + merge em `main`',
+                  `4. Tag \`v${version}\` e GitHub Release criados automaticamente`,
+                  '',
+                  '> Versão calculada a partir de commits convencionais (feat/fix/BREAKING).',
+                ].join('\n'),
+              });
+
+              core.notice(`PR criado: #${pr.number} — ${pr.html_url}`);
+            } catch (error) {
+              core.setFailed(`Falha ao criar PR develop → release: ${error.message}`);
+            }

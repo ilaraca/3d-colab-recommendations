@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Validar origem e destino do PR
         env:
           BASE: ${{ github.base_ref }}
@@ -32,7 +37,7 @@ jobs:
           case "$BASE" in
             main)
               if ! is_prefix "$HEAD" "release/" && ! is_prefix "$HEAD" "hotfix/"; then
-                fail "A branch \`main\` (produção) só aceita PRs vindos de \`release/*\` ou \`hotfix/*\`. Abra o PR a partir de uma release ou hotfix."
+                fail "A branch \`main\` (produção) só aceita PRs vindos de \`release/*\` ou \`hotfix/*\`."
               fi
               ;;
 
@@ -46,8 +51,12 @@ jobs:
               ;;
 
             release/*)
-              if [ "$HEAD" != "develop" ] && ! is_prefix "$HEAD" "feature/"; then
-                echo "::warning::Release branches normalmente recebem PR de \`develop\`. Origem atual: ${HEAD}"
+              if [ "$HEAD" = "develop" ]; then
+                echo "PR develop → release/* (estabilização) — permitido."
+              elif is_prefix "$HEAD" "feature/"; then
+                echo "::warning::Cherry-pick via feature/* → release/*"
+              else
+                fail "Release branches aceitam PR de \`develop\` (recomendado) ou \`feature/*\` (cherry-pick)."
               fi
               ;;
 
@@ -58,4 +67,34 @@ jobs:
               ;;
           esac
 
-          echo "Fluxo Git Flow validado com sucesso."
+          echo "Fluxo de branches validado."
+
+      - name: Validar feature/* criada a partir de develop
+        if: startsWith(github.head_ref, 'feature/') && github.base_ref == 'develop'
+        env:
+          HEAD: ${{ github.head_ref }}
+        run: |
+          fail() {
+            echo "::error title=Feature fora do Git Flow::$1"
+            exit 1
+          }
+
+          git fetch origin develop main
+
+          DEV_AHEAD=$(git rev-list --count origin/main..origin/develop || echo 0)
+          FEAT_DEV_BASE=$(git merge-base origin/develop HEAD)
+          MAIN_DEV_BASE=$(git merge-base origin/main origin/develop)
+
+          if [ "$DEV_AHEAD" -gt 0 ] && [ "$FEAT_DEV_BASE" = "$MAIN_DEV_BASE" ]; then
+            fail "A branch \`${HEAD}\` parece ter sido criada a partir de \`main\`, não de \`develop\`.
+
+          Recrie a branch:
+            git fetch origin develop
+            git checkout -b ${HEAD} origin/develop
+            # reaplique seus commits (cherry-pick ou git merge)
+
+          Ou use o script:
+            ./scripts/new-feature.sh ${HEAD#feature/}"
+          fi
+
+          echo "Feature ${HEAD} criada corretamente a partir de develop."

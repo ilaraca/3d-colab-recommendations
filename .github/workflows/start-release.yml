@@ -1,64 +1,27 @@
 name: Start Release
 
+# Deprecated: use Auto Release Sync (push em develop ou workflow_dispatch).
+# Mantido como atalho manual para forçar recálculo semver + PR develop → release.
+
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Versão semver (ex: 1.0.0)'
-        required: true
-        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  create-release-branch:
-    name: create-release-branch
+  trigger-sync:
+    name: trigger-sync
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout develop
-        uses: actions/checkout@v4
+      - name: Disparar Auto Release Sync
+        uses: actions/github-script@v7
         with:
-          ref: develop
-          fetch-depth: 0
-
-      - name: Validar versão semver
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-        run: |
-          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
-            echo "::error::Versão inválida: $VERSION"
-            exit 1
-          fi
-
-      - name: Bump version no package.json
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-        run: |
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.version = process.env.VERSION;
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
-      - name: Criar branch release a partir de develop
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-        run: |
-          BRANCH="release/${VERSION}"
-
-          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-            echo "::error::Branch $BRANCH já existe no remote."
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git add package.json
-          git commit -m "chore(release): bump version to ${VERSION}"
-          git push origin "$BRANCH"
-          echo "Branch ${BRANCH} criada a partir de develop."
-          echo "O workflow Auto Release PR abrirá o PR → main automaticamente."
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'auto-release-sync.yml',
+              ref: 'develop',
+            });
+            core.notice('Auto Release Sync disparado. Verifique PR develop → release/*.');
