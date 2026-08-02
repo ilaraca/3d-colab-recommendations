@@ -100,8 +100,23 @@ git push -u origin hotfix/1.0.1
 |----------|---------|--------|
 | `CI` | PR e push em `develop`/`release/*` | lint, testes, build |
 | `Git Flow Guard` | Todo PR | Valida origem/destino das branches |
+| `Auto Pull Request` | Push em `feature/**` | Abre PR automático → `develop` |
 | `Release` | Merge em `main` vindo de `release/*` ou `hotfix/*` | Cria tag + GitHub Release |
 | `Start Release` | Manual (`workflow_dispatch`) | Cria branch release e PR → main |
+
+### Permissões do Actions (obrigatório para auto-PR)
+
+Em **Settings → Actions → General → Workflow permissions**:
+
+1. Selecione **Read and write permissions**
+2. Marque **Allow GitHub Actions to create and approve pull requests**
+3. Salve
+
+Sem isso, o workflow `Auto Pull Request` falha ao criar o PR (CI passa, mas o PR não abre).
+
+**Re-executar manualmente:** Actions → Auto Pull Request → Run workflow → branch `feature/ml-learning-lab`
+
+**Fallback manual:** no GitHub, clique em **Compare & pull request** no banner amarelo da branch.
 
 ## Proteção de branches (setup único)
 

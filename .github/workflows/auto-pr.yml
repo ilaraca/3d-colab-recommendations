@@ -10,6 +10,7 @@ on:
         description: 'Branch de origem (ex: feature/ml-learning-lab)'
         required: true
         type: string
+        default: feature/ml-learning-lab
 
 permissions:
   contents: read
@@ -38,38 +39,50 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const { data: existing } = await github.rest.pulls.list({
-              owner,
-              repo,
-              head: `${owner}:${head}`,
-              base: 'develop',
-              state: 'open',
-            });
+            try {
+              const { data: existing } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${head}`,
+                base: 'develop',
+                state: 'open',
+              });
 
-            if (existing.length > 0) {
-              core.info(`PR #${existing[0].number} já aberto: ${head} → develop`);
-              core.info(existing[0].html_url);
-              return;
+              if (existing.length > 0) {
+                core.info(`PR #${existing[0].number} já aberto: ${head} → develop`);
+                core.info(existing[0].html_url);
+                return;
+              }
+
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: `${head} → develop`,
+                head,
+                base: 'develop',
+                body: [
+                  '## Pull request automático',
+                  '',
+                  `Branch \`${head}\` → \`develop\` via workflow **Auto Pull Request**.`,
+                  '',
+                  '### Checklist',
+                  '- [ ] CI verde (`lint-test-build` + `validate-branch-flow`)',
+                  '- [ ] Revisão de código',
+                  '',
+                  `> Gerado automaticamente no push de \`${head}\`.`,
+                ].join('\n'),
+              });
+
+              core.notice(`PR criado: #${pr.number} — ${pr.html_url}`);
+            } catch (error) {
+              const hint = [
+                'Falha ao criar PR automaticamente.',
+                'Habilite em Settings → Actions → General:',
+                '  • Workflow permissions: Read and write',
+                '  • Allow GitHub Actions to create and approve pull requests',
+                'Ou abra manualmente: Compare & pull request no GitHub.',
+                '',
+                `Erro: ${error.message}`,
+              ].join('\n');
+              core.setFailed(hint);
             }
-
-            const { data: pr } = await github.rest.pulls.create({
-              owner,
-              repo,
-              title: `${head} → develop`,
-              head,
-              base: 'develop',
-              body: [
-                '## Pull request automático',
-                '',
-                `Branch \`${head}\` integrada em \`develop\` via workflow **Auto Pull Request**.`,
-                '',
-                '### Checklist',
-                '- [ ] CI verde (`lint-test-build` + `validate-branch-flow`)',
-                '- [ ] Revisão de código',
-                '- [ ] Test plan preenchido',
-                '',
-                `> Gerado automaticamente no push da branch \`${head}\`.`,
-              ].join('\n'),
-            });
-
-            core.info(`PR criado: #${pr.number} — ${pr.html_url}`);
