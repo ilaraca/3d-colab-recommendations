@@ -75,7 +75,13 @@ export default function ProductPage() {
             {showPreview && product.stl_file ? (
               <StlPreview url={product.stl_file.url} />
             ) : product.images[0] ? (
-              <Image src={product.images[0].url} alt={product.title} fill className="object-cover" />
+              <Image
+                src={product.images[0].url}
+                alt={product.title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <Box className="h-16 w-16 text-muted-foreground" />
@@ -89,48 +95,51 @@ export default function ProductPage() {
           )}
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <div className="flex gap-2 mb-2">
+        <div className="flex flex-col gap-6">
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
               <Badge>{categoryLabel}</Badge>
               <Badge variant="outline">{product.material}</Badge>
             </div>
-            <h1 className="text-3xl font-bold">{product.title}</h1>
-            <p className="text-3xl font-bold text-primary mt-2">{priceFormatted}</p>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold leading-tight">{product.title}</h1>
+              <p className="text-3xl font-bold text-primary">{priceFormatted}</p>
+            </div>
+            <p className="text-muted-foreground leading-relaxed">{product.description}</p>
           </div>
 
-          <p className="text-muted-foreground">{product.description}</p>
-
           <Card>
-            <CardContent className="p-4 grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Ruler className="h-4 w-4 text-muted-foreground" />
+            <CardContent className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <Ruler className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="text-sm">
                   {product.width}×{product.height}×{product.depth} cm
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3 min-w-0">
+                <Scale className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="text-sm">{product.weight} kg</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Timer className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3 min-w-0">
+                <Timer className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="text-sm">{product.print_time}h impressão</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{product.user.name}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm truncate">{product.user.name}</span>
               </div>
             </CardContent>
           </Card>
 
-          <Link href="/marketplace">
+          <Link href="/marketplace" className="pt-2">
             <Button variant="outline">← Voltar ao marketplace</Button>
           </Link>
         </div>
       </div>
 
-      <SimilarProducts productId={product.id} />
+      <div className="mt-12">
+        <SimilarProducts productId={product.id} />
+      </div>
     </div>
   );
 }

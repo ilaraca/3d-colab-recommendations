@@ -44,7 +44,7 @@ function SignInForm() {
   };
 
   return (
-    <div className="container max-w-lg py-12">
+    <div className="container mx-auto max-w-lg px-4 py-12">
       <div className="text-center mb-8">
         <Sparkles className="h-10 w-10 text-primary mx-auto mb-2" />
         <h1 className="text-2xl font-bold">Entrar na demo</h1>

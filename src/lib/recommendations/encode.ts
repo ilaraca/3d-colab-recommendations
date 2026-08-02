@@ -49,3 +49,8 @@ export function encodeUserFromPurchases(
   const vectors = purchasedProducts.map((product) => encodeProduct(product, context));
   return averageVectors(vectors);
 }
+
+/** Vetor neutro para cold start / leave-one-out com única compra. */
+export function encodeColdStartUser(context: RecommendationContext): number[] {
+  return Array.from({ length: context.dimensions }, () => 0);
+}
