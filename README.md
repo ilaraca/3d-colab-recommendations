@@ -1,14 +1,15 @@
 # 3D Colab Recommendations
 
-Marketplace 3D **lite** derivado do [3D Colab](https://github.com/ilaraca/3d-colab), focado em demonstrar um **sistema de recomendação content-based** (Fase 1) para a pós-graduação.
+Marketplace 3D **lite** derivado do [3D Colab](https://github.com/ilaraca/3d-colab), focado em demonstrar um **sistema de recomendação** (content-based + rede neural) e um laboratório interativo (`/learn`) para a pós-graduação.
 
-> Pipeline: **contexto → encode (produto/usuário) → similaridade de cosseno → ranking**
+> Pipeline: **contexto → encode → content-based (cosseno) ou ML (TensorFlow.js) → ranking**
 
 ## O que tem neste repo
 
 - UI do marketplace 3D Colab (visual familiar)
 - Preview 3D de arquivos STL nos produtos
-- Sistema de recomendação personalizado (Fase 1)
+- Recomendação personalizada — Fase 1 (cosseno) e Fase 2 (rede neural)
+- Laboratório educacional em `/learn` (vetores, treino no browser, comparação, quiz)
 - Logins fixos para demo ao vivo
 - Seed com 20 produtos e históricos distintos
 
@@ -16,11 +17,22 @@ Marketplace 3D **lite** derivado do [3D Colab](https://github.com/ilaraca/3d-col
 
 Pagamentos (Mercado Pago), chat, escrow, upload, doações, admin e demais complexidades de produção.
 
-## Setup rápido
+## Qual branch clonar
+
+Use a branch **`develop`** — é onde está a versão atual (marketplace + laboratório ML).  
+A `main` só recebe releases estáveis e pode estar atrás.
 
 ```bash
 git clone https://github.com/ilaraca/3d-colab-recommendations.git
 cd 3d-colab-recommendations
+git checkout develop
+```
+
+Requisito: **Node.js 20+** (CI usa Node 20).
+
+## Setup rápido
+
+```bash
 cp .env.example .env
 
 # Subir PostgreSQL
@@ -28,14 +40,19 @@ docker compose up -d
 
 # Instalar e configurar banco
 npm install
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npm run seed
 
 # Rodar
 npm run dev
 ```
 
-Acesse: http://localhost:3000
+Atalho equivalente ao migrate + seed: `npm run db:setup`
+
+Acesse: http://localhost:3000  
+Laboratório: http://localhost:3000/learn
+
+> Em deploy público, troque `NEXTAUTH_SECRET` e trate `/api/learn/upload-model` como endpoint sensível (sem autenticação no lab local).
 
 ## Demo — logins fixos
 
@@ -51,6 +68,7 @@ Acesse: http://localhost:3000
 2. Login como Maria → carrossel muda para itens decorativos
 3. Logout → login como João → recomendações diferentes
 4. Abrir um produto → "Produtos similares" + preview 3D STL
+5. Abrir `/learn` → vetores, treino TF, comparar content vs ML, quiz
 
 ## Arquitetura
 
@@ -59,8 +77,10 @@ src/lib/recommendations/
 ├── context.ts      # min/max, índices category/material
 ├── encode.ts       # vetores de produto e usuário
 ├── similarity.ts   # cosseno
+├── training-data.ts
+├── model.ts        # rede neural TF.js
 ├── queries.ts      # Prisma
-└── recommend.ts    # orquestração
+└── recommend.ts    # orquestração (auto / ml / content)
 ```
 
 Documentação completa das fases: [`docs/recommendations/`](./docs/recommendations/)
@@ -91,19 +111,13 @@ GET /api/recommendations?source=content # Fase 1 (cosseno)
 
 ## Laboratório interativo (`/learn`)
 
-Rota educacional para aprender o pipeline de ML com TensorFlow.js:
-
-- **Vetores** — perfil numérico de Maria vs João, pesos das features
-- **Treino TF** — playground no browser com gráfico de loss/val_loss
+- **Passo a passo** — mapa do pipeline e traces dos métodos
+- **Vetores** — perfil numérico de Maria vs João
+- **Treino TF** — playground no browser; opcionalmente **Aplicar no marketplace**
 - **Comparar** — content-based vs rede neural lado a lado
-- **Missões guiadas** — checklist com progresso salvo no navegador
+- **Quiz / missões** — consolidação com progresso no navegador
 
-Acesse: http://localhost:3000/learn
-
-**Novidades (curto prazo):**
-- Toggle **Auto / Content / ML / Ambos** no marketplace (logado)
-- Botão **Aplicar no marketplace** após treinar no browser
-- Tabela de pares de treino, tooltips nas features e quiz rápido
+No marketplace (logado): toggle **Auto / Content / ML / Ambos**.
 
 ## Roadmap
 
