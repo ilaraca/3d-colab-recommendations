@@ -46,8 +46,12 @@ jobs:
               ;;
 
             release/*)
-              if [ "$HEAD" != "develop" ] && ! is_prefix "$HEAD" "feature/"; then
-                echo "::warning::Release branches normalmente recebem PR de \`develop\`. Origem atual: ${HEAD}"
+              if [ "$HEAD" = "develop" ]; then
+                echo "PR develop → release/* (estabilização) — permitido."
+              elif is_prefix "$HEAD" "feature/"; then
+                echo "::warning::Cherry-pick via feature/* → release/*"
+              else
+                fail "Release branches aceitam PR de \`develop\` (recomendado) ou \`feature/*\` (cherry-pick)."
               fi
               ;;
 
