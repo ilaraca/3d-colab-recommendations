@@ -5,6 +5,9 @@
 ```json
 {
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0"
+  },
+  "optionalDependencies": {
     "@tensorflow/tfjs-node": "^4.22.0"
   },
   "devDependencies": {
@@ -13,7 +16,9 @@
 }
 ```
 
-> **Nota Vercel:** `@tensorflow/tfjs-node` pode exigir build em ambiente com native bindings. Alternativa: treinar em máquina local/CI e fazer upload do modelo para Cloudinary/S3; inferência com `@tensorflow/tfjs` ( WASM ) no serverless.
+> **Padrão:** `@tensorflow/tfjs` (JavaScript puro) via `src/lib/recommendations/tensorflow.ts`.  
+> **Opcional:** `@tensorflow/tfjs-node` com `TFJS_USE_NODE=1` para acelerar treino/inferência no Node.  
+> **Vercel/serverless:** treinar localmente ou no lab; inferência com `@tensorflow/tfjs` (WASM).
 
 ---
 
@@ -30,9 +35,10 @@ inputDimension = context.dimensions * 2
 ### Layers
 
 ```typescript
-import * as tf from '@tensorflow/tfjs-node';
+import { getTf } from './tensorflow';
 
-function createModel(inputDim: number): tf.Sequential {
+async function createModel(inputDim: number) {
+  const tf = await getTf();
   const model = tf.sequential();
 
   model.add(tf.layers.dense({
@@ -386,14 +392,15 @@ models/recommendations/*
 ## 11. Checklist
 
 ```
-[ ] Instalar @tensorflow/tfjs-node
-[ ] training-data.ts com leave-one-out
-[ ] model.ts
-[ ] ml-recommend.ts + model-loader.ts
-[ ] train-recommendation-model.ts
-[ ] Estender API com source=auto|ml|content
-[ ] metadata.json
-[ ] Testes
-[ ] Documentar npm run recommendations:train no README
+[x] Instalar @tensorflow/tfjs (+ tfjs-node opcional)
+[x] training-data.ts com leave-one-out
+[x] model.ts
+[x] ml-recommend.ts + model-loader.ts
+[x] browser-model.ts (lab)
+[x] train-recommendation-model.ts
+[x] Estender API com source=auto|ml|content|both
+[x] metadata.json
+[x] Testes unitários (encode, training-data, model)
+[x] Documentar npm run recommendations:train no README
 [ ] Validar métricas vs baseline Fase 1
 ```

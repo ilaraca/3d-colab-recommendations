@@ -379,17 +379,17 @@ tests/unit/lib/recommendations/
 ## 10. Checklist de implementação
 
 ```
-[ ] constants.ts + types.ts
-[ ] context.ts
-[ ] encode.ts
-[ ] similarity.ts
-[ ] queries.ts
-[ ] recommend.ts
-[ ] route.ts (API)
-[ ] recommendations-section.tsx
-[ ] similar-products.tsx
-[ ] Integração marketplace/page.tsx
-[ ] Integração products/[id]/page.tsx
-[ ] Testes unitários
-[ ] Teste manual com 2+ usuários e históricos diferentes
+[x] constants.ts + types.ts
+[x] context.ts
+[x] encode.ts
+[x] similarity.ts
+[x] queries.ts
+[x] recommend.ts
+[x] route.ts (API)
+[x] recommendations-section.tsx
+[x] similar-products.tsx
+[x] Integração marketplace/page.tsx
+[x] Integração products/[id]/page.tsx
+[x] Testes unitários
+[x] Teste manual com 2+ usuários e históricos diferentes
 ```
