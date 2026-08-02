@@ -14,24 +14,26 @@ Este repositório segue [Git Flow](https://nvie.com/posts/a-successful-git-branc
 
 ## Fluxo visual
 
+> No diagrama, hífens substituem barras (`feature-ml-lab` = `feature/ml-lab`) — exigência de sintaxe do Mermaid.
+
 ```mermaid
 gitGraph
   commit id: "v0.1.0"
   branch develop
   checkout develop
-  commit id: "integração"
-  branch feature/ml-lab
-  checkout feature/ml-lab
+  commit id: "integracao"
+  branch feature-ml-lab
+  checkout feature-ml-lab
   commit id: "feat"
   checkout develop
-  merge feature/ml-lab
-  branch release/1.0.0
-  checkout release/1.0.0
-  commit id: "fix release"
+  merge feature-ml-lab
+  branch release-1-0-0
+  checkout release-1-0-0
+  commit id: "fix-release"
   checkout main
-  merge release/1.0.0 tag: "v1.0.0"
+  merge release-1-0-0 tag: "v1.0.0"
   checkout develop
-  merge release/1.0.0
+  merge release-1-0-0
 ```
 
 ## Para colaboradores (fork / feature)
