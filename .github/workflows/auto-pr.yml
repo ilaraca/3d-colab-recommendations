@@ -31,33 +31,45 @@ jobs:
           fi
 
       - name: Criar ou confirmar PR para develop
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD: ${{ steps.meta.outputs.head }}
-        run: |
-          EXISTING=$(gh pr list --repo "${{ github.repository }}" --head "$HEAD" --base develop --state open --json number --jq '.[0].number // empty')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const head = '${{ steps.meta.outputs.head }}';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-          if [ -n "$EXISTING" ]; then
-            echo "PR #${EXISTING} já aberto: ${HEAD} → develop"
-            gh pr view "$EXISTING" --repo "${{ github.repository }}" --web 2>/dev/null || true
-            exit 0
-          fi
+            const { data: existing } = await github.rest.pulls.list({
+              owner,
+              repo,
+              head: `${owner}:${head}`,
+              base: 'develop',
+              state: 'open',
+            });
 
-          gh pr create \
-            --repo "${{ github.repository }}" \
-            --base develop \
-            --head "$HEAD" \
-            --title "${HEAD} → develop" \
-            --body "$(cat <<EOF
-          ## Pull request automático
+            if (existing.length > 0) {
+              core.info(`PR #${existing[0].number} já aberto: ${head} → develop`);
+              core.info(existing[0].html_url);
+              return;
+            }
 
-          Branch \`${HEAD}\` integrada em \`develop\` via workflow **Auto Pull Request**.
+            const { data: pr } = await github.rest.pulls.create({
+              owner,
+              repo,
+              title: `${head} → develop`,
+              head,
+              base: 'develop',
+              body: [
+                '## Pull request automático',
+                '',
+                `Branch \`${head}\` integrada em \`develop\` via workflow **Auto Pull Request**.`,
+                '',
+                '### Checklist',
+                '- [ ] CI verde (`lint-test-build` + `validate-branch-flow`)',
+                '- [ ] Revisão de código',
+                '- [ ] Test plan preenchido',
+                '',
+                `> Gerado automaticamente no push da branch \`${head}\`.`,
+              ].join('\n'),
+            });
 
-          ### Checklist
-          - [ ] CI verde (\`lint-test-build\` + \`validate-branch-flow\`)
-          - [ ] Revisão de código
-          - [ ] Test plan preenchido
-
-          > Gerado automaticamente no push da branch \`${HEAD}\`.
-          EOF
-          )"
+            core.info(`PR criado: #${pr.number} — ${pr.html_url}`);
