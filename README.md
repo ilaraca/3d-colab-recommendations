@@ -96,6 +96,17 @@ Pagamentos (Mercado Pago), chat, escrow, upload de produtos, doações, admin e 
 
 ## Setup e instalação
 
+### Qual branch clonar
+
+Use a branch **`develop`** — é onde está a versão atual (marketplace + laboratório ML).  
+A `main` só recebe releases estáveis e pode estar atrás.
+
+```bash
+git clone https://github.com/ilaraca/3d-colab-recommendations.git
+cd 3d-colab-recommendations
+git checkout develop
+```
+
 ### Pré-requisitos
 
 - **Opção A (Docker):** Docker e Docker Compose
@@ -216,7 +227,8 @@ NEXTAUTH_SECRET=change-me-in-production-use-openssl-rand-base64-32
 | `APP_PORT` | Não | Porta da app no host (default: `3000`) |
 | `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` | Não | pgAdmin (default: `admin@admin.com` / `admin`) |
 
-> Variáveis de produção planejadas (`LEARN_UPLOAD_ENABLED`, etc.): ver [`docs/deployment/spec.md`](./docs/deployment/spec.md).
+> Variáveis de produção planejadas (`LEARN_UPLOAD_ENABLED`, etc.): ver [`docs/deployment/spec.md`](./docs/deployment/spec.md).  
+> Em deploy público, troque `NEXTAUTH_SECRET` e trate `POST /api/learn/upload-model` como endpoint sensível (sem autenticação no lab local).
 
 ---
 
@@ -1025,6 +1037,7 @@ npm run recommendations:train
 
 | Documento | Conteúdo |
 |-----------|----------|
+| [`CHANGELOG.md`](./CHANGELOG.md) | Histórico de mudanças (Keep a Changelog) |
 | [`docs/recommendations/README.md`](./docs/recommendations/README.md) | Documentação completa do sistema de recomendação (970 linhas, fluxogramas) |
 | [`docs/recommendations/OVERVIEW.md`](./docs/recommendations/OVERVIEW.md) | Overview técnico e mapeamento de features |
 | [`docs/GITFLOW.md`](./docs/GITFLOW.md) | Git Flow, workflows, commits semânticos |
