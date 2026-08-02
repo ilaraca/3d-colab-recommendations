@@ -91,7 +91,6 @@ Trabalho acumulado em `develop` até a primeira release estável (`1.0.0`).
 #### Documentação e assets
 
 - README expandido (~1000 linhas): índice, referência da API, seção Docker, troubleshooting, deploy
-- Spec de deploy e proteção do upload em `docs/deployment/spec.md` (draft)
 - Documentação completa em `docs/recommendations/` (fases, lab, fluxogramas)
 - Guia Git Flow em `docs/GITFLOW.md`
 - `CHANGELOG.md` (Keep a Changelog)
@@ -125,7 +124,7 @@ Trabalho acumulado em `develop` até a primeira release estável (`1.0.0`).
 ### Security / notas de escopo
 
 - Credenciais demo fixas (`demo123`) — intencionais para aula e demo ao vivo
-- `/api/learn/upload-model` sem autenticação — adequado ao lab local; spec de proteção em `docs/deployment/spec.md`
+- `/api/learn/upload-model` sem autenticação — adequado ao lab local; proteger antes de deploy público
 - Modelos treinados em `models/recommendations/` não versionados (artefato gerado; volume Docker `ml_models` persiste em runtime)
 
 ### Planned
