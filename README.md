@@ -111,6 +111,14 @@ Acesse: http://localhost:3000/learn
 - [x] Fase 2 — Rede neural (`@tensorflow/tfjs`)
 - [ ] Fase 3 — Embeddings / two-tower
 
+## Git Flow
+
+Branches: `main` (produção) · `develop` (integração) · `feature/*` · `release/*` · `hotfix/*`
+
+Colaboradores abrem PRs de `feature/*` → `develop`. Releases vão de `release/*` → `main` (aprovação exclusiva de @ilaraca).
+
+Guia completo: [`docs/GITFLOW.md`](./docs/GITFLOW.md)
+
 ## Licença
 
 MIT — derivado do projeto 3D Colab.

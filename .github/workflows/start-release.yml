@@ -1,0 +1,77 @@
+name: Start Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão semver (ex: 1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-branch:
+    name: create-release-branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Validar versão semver
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+            echo "::error::Versão inválida: $VERSION"
+            exit 1
+          fi
+
+      - name: Criar branch release
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="release/${VERSION}"
+
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            echo "::error::Branch $BRANCH já existe no remote."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+
+      - name: Abrir PR release → main
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="release/${VERSION}"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "release: v${VERSION}" \
+            --body "$(cat <<EOF
+          ## Release v${VERSION}
+
+          PR gerado automaticamente pelo workflow **Start Release**.
+
+          ### Checklist
+          - [ ] CI verde (\`lint-test-build\` + \`validate-branch-flow\`)
+          - [ ] CHANGELOG / notas de release revisadas
+          - [ ] Aprovação do maintainer (@ilaraca) — **obrigatória para merge em \`main\`**
+          - [ ] Após merge: tag \`v${VERSION}\` e GitHub Release criados automaticamente
+
+          ### Git Flow
+          \`develop\` → \`release/${VERSION}\` → \`main\` (produção)
+          EOF
+          )"
