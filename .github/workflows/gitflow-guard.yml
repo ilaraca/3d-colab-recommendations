@@ -1,0 +1,100 @@
+name: Git Flow Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+jobs:
+  validate-branch-flow:
+    name: validate-branch-flow
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar origem e destino do PR
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "Pull request: ${HEAD} → ${BASE}"
+
+          is_prefix() {
+            case "$1" in
+              "$2"*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          fail() {
+            echo "::error title=Git Flow violado::$1"
+            exit 1
+          }
+
+          case "$BASE" in
+            main)
+              if ! is_prefix "$HEAD" "release/" && ! is_prefix "$HEAD" "hotfix/"; then
+                fail "A branch \`main\` (produção) só aceita PRs vindos de \`release/*\` ou \`hotfix/*\`."
+              fi
+              ;;
+
+            develop)
+              if ! is_prefix "$HEAD" "feature/" \
+                && ! is_prefix "$HEAD" "hotfix/" \
+                && ! is_prefix "$HEAD" "release/" \
+                && [ "$HEAD" != "main" ]; then
+                fail "A branch \`develop\` aceita PRs de \`feature/*\`, \`hotfix/*\`, \`release/*\` (back-merge) ou \`main\` (sync pós-release)."
+              fi
+              ;;
+
+            release/*)
+              if [ "$HEAD" = "develop" ]; then
+                echo "PR develop → release/* (estabilização) — permitido."
+              elif is_prefix "$HEAD" "feature/"; then
+                echo "::warning::Cherry-pick via feature/* → release/*"
+              else
+                fail "Release branches aceitam PR de \`develop\` (recomendado) ou \`feature/*\` (cherry-pick)."
+              fi
+              ;;
+
+            *)
+              if is_prefix "$HEAD" "feature/" && [ "$BASE" != "develop" ]; then
+                fail "Branches \`feature/*\` devem abrir PR para \`develop\`, não para \`${BASE}\`."
+              fi
+              ;;
+          esac
+
+          echo "Fluxo de branches validado."
+
+      - name: Validar feature/* criada a partir de develop
+        if: startsWith(github.head_ref, 'feature/') && github.base_ref == 'develop'
+        env:
+          HEAD: ${{ github.head_ref }}
+        run: |
+          fail() {
+            echo "::error title=Feature fora do Git Flow::$1"
+            exit 1
+          }
+
+          git fetch origin develop main
+
+          DEV_AHEAD=$(git rev-list --count origin/main..origin/develop || echo 0)
+          FEAT_DEV_BASE=$(git merge-base origin/develop HEAD)
+          MAIN_DEV_BASE=$(git merge-base origin/main origin/develop)
+
+          if [ "$DEV_AHEAD" -gt 0 ] && [ "$FEAT_DEV_BASE" = "$MAIN_DEV_BASE" ]; then
+            fail "A branch \`${HEAD}\` parece ter sido criada a partir de \`main\`, não de \`develop\`.
+
+          Recrie a branch:
+            git fetch origin develop
+            git checkout -b ${HEAD} origin/develop
+            # reaplique seus commits (cherry-pick ou git merge)
+
+          Ou use o script:
+            ./scripts/new-feature.sh ${HEAD#feature/}"
+          fi
+
+          echo "Feature ${HEAD} criada corretamente a partir de develop."

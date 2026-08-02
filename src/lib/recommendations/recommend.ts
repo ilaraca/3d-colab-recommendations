@@ -1,10 +1,14 @@
 import {
   RECOMMENDATION_DEFAULT_LIMIT,
   RECOMMENDATION_MAX_LIMIT,
+  type RecommendationAlgorithm,
   type RecommendationMode,
+  type RecommendationSource,
 } from './constants';
 import { buildContext } from './context';
 import { encodeProduct, encodeUserFromPurchases } from './encode';
+import { loadModelMetadata } from './model-loader';
+import { ModelNotFoundError, scoreProductsML } from './ml-recommend';
 import {
   fetchProductsForRecommendations,
   fetchProductById,
@@ -29,7 +33,7 @@ interface RankOptions {
   mode: RecommendationMode;
 }
 
-function rankProducts(options: RankOptions): ScoredProduct[] {
+function rankProductsContent(options: RankOptions): ScoredProduct[] {
   const {
     referenceVector,
     products,
@@ -38,7 +42,6 @@ function rankProducts(options: RankOptions): ScoredProduct[] {
     ownProductUserId,
     excludeIds,
     limit,
-    mode,
   } = options;
 
   const candidates = products.filter(
@@ -103,14 +106,24 @@ function clampLimit(limit?: number): number {
   return Math.min(Math.max(1, value), RECOMMENDATION_MAX_LIMIT);
 }
 
+function resolveAlgorithmSource(
+  effectiveMode: RecommendationMode,
+  algorithm: RecommendationAlgorithm
+): RecommendationsResponse['meta']['source'] {
+  if (effectiveMode === 'popular') return 'popular';
+  return algorithm;
+}
+
 export async function getRecommendations(options: {
   userId?: number;
   mode?: RecommendationMode;
+  source?: RecommendationSource;
   productId?: number;
   limit?: number;
   excludeIds?: string;
 }): Promise<RecommendationsResponse> {
   const mode = options.mode ?? (options.userId ? 'personalized' : 'popular');
+  const source = options.source ?? 'auto';
   const limit = clampLimit(options.limit);
   const excludeIds = parseExcludeIds(options.excludeIds);
 
@@ -121,6 +134,7 @@ export async function getRecommendations(options: {
   let ownProductUserId: number | undefined;
   let referenceVector: number[] | null = null;
   let effectiveMode: RecommendationMode = mode;
+  let purchasedProducts: RecommendationProduct[] = [];
 
   if (mode === 'similar') {
     if (!options.productId) {
@@ -130,7 +144,12 @@ export async function getRecommendations(options: {
     if (!referenceProduct) {
       return {
         items: [],
-        meta: { mode: 'similar', totalCandidates: 0, generatedAt: new Date().toISOString() },
+        meta: {
+          mode: 'similar',
+          source: 'content',
+          totalCandidates: 0,
+          generatedAt: new Date().toISOString(),
+        },
       };
     }
     referenceVector = encodeProduct(referenceProduct, context);
@@ -140,6 +159,7 @@ export async function getRecommendations(options: {
     ownProductUserId = options.userId;
     const history = await fetchUserPurchaseHistory(options.userId);
     purchasedIds = history.purchasedProductIds;
+    purchasedProducts = history.purchasedProducts;
     referenceVector = encodeUserFromPurchases(history.purchasedProducts, context);
 
     if (!referenceVector) {
@@ -152,21 +172,60 @@ export async function getRecommendations(options: {
     effectiveMode = 'popular';
   }
 
-  const ranked = rankProducts({
-    referenceVector,
-    products,
-    context,
-    purchasedIds,
-    ownProductUserId,
-    excludeIds,
-    limit,
-    mode: effectiveMode,
-  });
+  let algorithm: RecommendationAlgorithm = effectiveMode === 'popular' ? 'popular' : 'content';
+  let ranked: ScoredProduct[] = [];
+
+  const canUseML =
+    effectiveMode === 'personalized' &&
+    options.userId &&
+    purchasedProducts.length > 0 &&
+    (source === 'auto' || source === 'ml');
+
+  if (canUseML) {
+    try {
+      ranked = await scoreProductsML({
+        user: { id: options.userId!, purchases: purchasedProducts },
+        products,
+        context,
+        purchasedIds,
+        ownProductUserId,
+        excludeIds,
+        limit,
+      });
+      algorithm = 'ml';
+    } catch (error) {
+      if (source === 'ml') {
+        throw error instanceof ModelNotFoundError ? error : error;
+      }
+    }
+  } else if (source === 'ml') {
+    throw new ModelNotFoundError();
+  }
+
+  if (ranked.length === 0) {
+    ranked = rankProductsContent({
+      referenceVector,
+      products,
+      context,
+      purchasedIds,
+      ownProductUserId,
+      excludeIds,
+      limit,
+      mode: effectiveMode,
+    });
+    if (effectiveMode !== 'popular') {
+      algorithm = 'content';
+    }
+  }
+
+  const metadata = algorithm === 'ml' ? await loadModelMetadata() : null;
 
   return {
     items: ranked.map(toResponseItem),
     meta: {
       mode: effectiveMode,
+      source: resolveAlgorithmSource(effectiveMode, algorithm),
+      modelVersion: metadata?.version,
       totalCandidates: products.length,
       generatedAt: new Date().toISOString(),
     },

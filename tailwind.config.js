@@ -5,6 +5,10 @@ const config = {
   darkMode: ["class"],
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
+    container: {
+      center: true,
+      padding: "1rem",
+    },
     extend: {
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

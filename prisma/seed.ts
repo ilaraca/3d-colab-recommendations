@@ -4,20 +4,13 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 const DEMO_PASSWORD = 'demo123';
-const STL_SAMPLES = [
-  'https://threejs.org/examples/models/stl/ascii/slotted_disk.stl',
-  'https://threejs.org/examples/models/stl/binary/pr2_head_pvc.stl',
-  'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/models/stl/ascii/slotted_disk.stl',
-];
 
-const PLACEHOLDER_IMAGES = [
-  'https://images.unsplash.com/photo-1615796153287-98eacf0bb016?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1631541909063-38a2f265a67d?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&h=300&fit=crop',
-];
-
+/**
+ * Assets servidos de public/. As imagens ilustram o produto descrito e os STLs
+ * reproduzem suas dimensões — veja src/scripts/generate-sample-stls.ts.
+ */
 type ProductSeed = {
+  slug: string;
   title: string;
   description: string;
   category: string;
@@ -34,26 +27,26 @@ type ProductSeed = {
 };
 
 const PRODUCTS: ProductSeed[] = [
-  { title: 'Vaso Geométrico', description: 'Vaso decorativo com padrão geométrico.', category: 'decorative', material: 'PLA', price: 45, width: 12, height: 18, depth: 12, weight: 0.2, print_time: 4, makerIndex: 0, rating: 4.5, withStl: true },
-  { title: 'Escultura Abstrata', description: 'Peça artística para estante.', category: 'decorative', material: 'PLA', price: 89, width: 15, height: 25, depth: 10, weight: 0.35, print_time: 8, makerIndex: 0, rating: 4.8, withStl: true },
-  { title: 'Luminária Hexagonal', description: 'Abajur modular hexagonal.', category: 'decorative', material: 'PETG', price: 120, width: 20, height: 22, depth: 20, weight: 0.5, print_time: 10, makerIndex: 1, rating: 4.2 },
-  { title: 'Porta-retrato 3D', description: 'Moldura decorativa para fotos 10x15.', category: 'decorative', material: 'PLA', price: 35, width: 18, height: 22, depth: 3, weight: 0.15, print_time: 3, makerIndex: 1, rating: 4.0 },
-  { title: 'Organizador de Mesa', description: 'Organizador com compartimentos para canetas.', category: 'functional', material: 'ABS', price: 55, width: 20, height: 8, depth: 15, weight: 0.25, print_time: 5, makerIndex: 2, rating: 4.6, withStl: true },
-  { title: 'Suporte de Headphone', description: 'Suporte ergonômico para fone de ouvido.', category: 'functional', material: 'ABS', price: 42, width: 12, height: 25, depth: 15, weight: 0.3, print_time: 4, makerIndex: 2, rating: 4.7 },
-  { title: 'Clip de Cabo USB', description: 'Organizador de cabos para mesa.', category: 'functional', material: 'TPU', price: 18, width: 5, height: 3, depth: 8, weight: 0.05, print_time: 1, makerIndex: 3, rating: 4.3 },
-  { title: 'Engrenagem Educacional', description: 'Kit de engrenagens para demonstração.', category: 'educational', material: 'PLA', price: 65, width: 15, height: 5, depth: 15, weight: 0.2, print_time: 6, makerIndex: 3, rating: 4.9, withStl: true },
-  { title: 'Modelo Anatômico', description: 'Modelo simplificado de osso do braço.', category: 'educational', material: 'PLA', price: 95, width: 8, height: 30, depth: 8, weight: 0.18, print_time: 7, makerIndex: 0, rating: 4.4 },
-  { title: 'Action Figure Base', description: 'Base articulada para action figures.', category: 'figure', material: 'ABS', price: 75, width: 10, height: 20, depth: 10, weight: 0.22, print_time: 6, makerIndex: 1, rating: 4.1 },
-  { title: 'Miniatura Dragão', description: 'Miniatura detalhada para RPG.', category: 'figure', material: 'Resina', price: 150, width: 8, height: 12, depth: 8, weight: 0.1, print_time: 12, makerIndex: 2, rating: 4.9, withStl: true },
-  { title: 'Protótipo Caixa Enclosure', description: 'Case para projeto eletrônico Arduino.', category: 'prototype', material: 'ABS', price: 38, width: 12, height: 6, depth: 8, weight: 0.12, print_time: 3, makerIndex: 3, rating: 4.0 },
-  { title: 'Capa Protótipo Smartphone', description: 'Case customizado para desenvolvimento.', category: 'prototype', material: 'TPU', price: 28, width: 8, height: 16, depth: 1, weight: 0.08, print_time: 2, makerIndex: 0, rating: 3.8 },
-  { title: 'Vaso Suculenta', description: 'Vaso minimalista para suculentas.', category: 'decorative', material: 'PLA', price: 32, width: 10, height: 8, depth: 10, weight: 0.12, print_time: 2, makerIndex: 1, rating: 4.5 },
-  { title: 'Suporte Tablet', description: 'Suporte ajustável para tablet.', category: 'functional', material: 'ABS', price: 48, width: 18, height: 15, depth: 12, weight: 0.28, print_time: 5, makerIndex: 2, rating: 4.6 },
-  { title: 'Quebra-cabeça 3D', description: 'Puzzle mecânico para crianças.', category: 'educational', material: 'PLA', price: 58, width: 12, height: 12, depth: 12, weight: 0.2, print_time: 6, makerIndex: 3, rating: 4.7, withStl: true },
-  { title: 'Estátua Gato', description: 'Estátua decorativa de gato.', category: 'decorative', material: 'PLA', price: 52, width: 8, height: 15, depth: 8, weight: 0.15, print_time: 4, makerIndex: 0, rating: 4.3 },
-  { title: 'Suporte de Monitor', description: 'Elevador para monitor com gaveta.', category: 'functional', material: 'PETG', price: 85, width: 40, height: 10, depth: 25, weight: 0.8, print_time: 12, makerIndex: 1, rating: 4.8 },
-  { title: 'Peça de Reposição Impressora', description: 'Extruder cover para Ender 3.', category: 'part', material: 'ABS', price: 22, width: 6, height: 4, depth: 6, weight: 0.05, print_time: 1, makerIndex: 2, rating: 4.2 },
-  { title: 'Miniatura Robô', description: 'Robô articulado para coleção.', category: 'figure', material: 'PLA', price: 68, width: 8, height: 14, depth: 6, weight: 0.14, print_time: 5, makerIndex: 3, rating: 4.5, withStl: true },
+  { slug: 'vaso-geometrico', title: 'Vaso Geométrico', description: 'Vaso decorativo com padrão geométrico.', category: 'decorative', material: 'PLA', price: 45, width: 12, height: 18, depth: 12, weight: 0.2, print_time: 4, makerIndex: 0, rating: 4.5, withStl: true },
+  { slug: 'escultura-abstrata', title: 'Escultura Abstrata', description: 'Peça artística para estante.', category: 'decorative', material: 'PLA', price: 89, width: 15, height: 25, depth: 10, weight: 0.35, print_time: 8, makerIndex: 0, rating: 4.8, withStl: true },
+  { slug: 'luminaria-hexagonal', title: 'Luminária Hexagonal', description: 'Abajur modular hexagonal.', category: 'decorative', material: 'PETG', price: 120, width: 20, height: 22, depth: 20, weight: 0.5, print_time: 10, makerIndex: 1, rating: 4.2 },
+  { slug: 'porta-retrato-3d', title: 'Porta-retrato 3D', description: 'Moldura decorativa para fotos 10x15.', category: 'decorative', material: 'PLA', price: 35, width: 18, height: 22, depth: 3, weight: 0.15, print_time: 3, makerIndex: 1, rating: 4.0 },
+  { slug: 'organizador-de-mesa', title: 'Organizador de Mesa', description: 'Organizador com compartimentos para canetas.', category: 'functional', material: 'ABS', price: 55, width: 20, height: 8, depth: 15, weight: 0.25, print_time: 5, makerIndex: 2, rating: 4.6, withStl: true },
+  { slug: 'suporte-de-headphone', title: 'Suporte de Headphone', description: 'Suporte ergonômico para fone de ouvido.', category: 'functional', material: 'ABS', price: 42, width: 12, height: 25, depth: 15, weight: 0.3, print_time: 4, makerIndex: 2, rating: 4.7 },
+  { slug: 'clip-de-cabo-usb', title: 'Clip de Cabo USB', description: 'Organizador de cabos para mesa.', category: 'functional', material: 'TPU', price: 18, width: 5, height: 3, depth: 8, weight: 0.05, print_time: 1, makerIndex: 3, rating: 4.3 },
+  { slug: 'engrenagem-educacional', title: 'Engrenagem Educacional', description: 'Kit de engrenagens para demonstração.', category: 'educational', material: 'PLA', price: 65, width: 15, height: 5, depth: 15, weight: 0.2, print_time: 6, makerIndex: 3, rating: 4.9, withStl: true },
+  { slug: 'modelo-anatomico', title: 'Modelo Anatômico', description: 'Modelo simplificado de osso do braço.', category: 'educational', material: 'PLA', price: 95, width: 8, height: 30, depth: 8, weight: 0.18, print_time: 7, makerIndex: 0, rating: 4.4 },
+  { slug: 'action-figure-base', title: 'Action Figure Base', description: 'Base articulada para action figures.', category: 'figure', material: 'ABS', price: 75, width: 10, height: 20, depth: 10, weight: 0.22, print_time: 6, makerIndex: 1, rating: 4.1 },
+  { slug: 'miniatura-dragao', title: 'Miniatura Dragão', description: 'Miniatura detalhada para RPG.', category: 'figure', material: 'Resina', price: 150, width: 8, height: 12, depth: 8, weight: 0.1, print_time: 12, makerIndex: 2, rating: 4.9, withStl: true },
+  { slug: 'prototipo-caixa-enclosure', title: 'Protótipo Caixa Enclosure', description: 'Case para projeto eletrônico Arduino.', category: 'prototype', material: 'ABS', price: 38, width: 12, height: 6, depth: 8, weight: 0.12, print_time: 3, makerIndex: 3, rating: 4.0 },
+  { slug: 'capa-prototipo-smartphone', title: 'Capa Protótipo Smartphone', description: 'Case customizado para desenvolvimento.', category: 'prototype', material: 'TPU', price: 28, width: 8, height: 16, depth: 1, weight: 0.08, print_time: 2, makerIndex: 0, rating: 3.8 },
+  { slug: 'vaso-suculenta', title: 'Vaso Suculenta', description: 'Vaso minimalista para suculentas.', category: 'decorative', material: 'PLA', price: 32, width: 10, height: 8, depth: 10, weight: 0.12, print_time: 2, makerIndex: 1, rating: 4.5 },
+  { slug: 'suporte-tablet', title: 'Suporte Tablet', description: 'Suporte ajustável para tablet.', category: 'functional', material: 'ABS', price: 48, width: 18, height: 15, depth: 12, weight: 0.28, print_time: 5, makerIndex: 2, rating: 4.6 },
+  { slug: 'quebra-cabeca-3d', title: 'Quebra-cabeça 3D', description: 'Puzzle mecânico para crianças.', category: 'educational', material: 'PLA', price: 58, width: 12, height: 12, depth: 12, weight: 0.2, print_time: 6, makerIndex: 3, rating: 4.7, withStl: true },
+  { slug: 'estatua-gato', title: 'Estátua Gato', description: 'Estátua decorativa de gato.', category: 'decorative', material: 'PLA', price: 52, width: 8, height: 15, depth: 8, weight: 0.15, print_time: 4, makerIndex: 0, rating: 4.3 },
+  { slug: 'suporte-de-monitor', title: 'Suporte de Monitor', description: 'Elevador para monitor com gaveta.', category: 'functional', material: 'PETG', price: 85, width: 40, height: 10, depth: 25, weight: 0.8, print_time: 12, makerIndex: 1, rating: 4.8 },
+  { slug: 'peca-reposicao-impressora', title: 'Peça de Reposição Impressora', description: 'Extruder cover para Ender 3.', category: 'part', material: 'ABS', price: 22, width: 6, height: 4, depth: 6, weight: 0.05, print_time: 1, makerIndex: 2, rating: 4.2 },
+  { slug: 'miniatura-robo', title: 'Miniatura Robô', description: 'Robô articulado para coleção.', category: 'figure', material: 'PLA', price: 68, width: 8, height: 14, depth: 6, weight: 0.14, print_time: 5, makerIndex: 3, rating: 4.5, withStl: true },
 ];
 
 async function main() {
@@ -70,18 +63,18 @@ async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const makers = await Promise.all([
-    prisma.user.create({ data: { name: 'Maker Alpha', email: 'maker1@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=maker1' } }),
-    prisma.user.create({ data: { name: 'Maker Beta', email: 'maker2@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=maker2' } }),
-    prisma.user.create({ data: { name: 'Maker Gamma', email: 'maker3@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=maker3' } }),
-    prisma.user.create({ data: { name: 'Maker Delta', email: 'maker4@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=maker4' } }),
+    prisma.user.create({ data: { name: 'Maker Alpha', email: 'maker1@demo.com', password: passwordHash, avatar_url: '/avatars/maker-alpha.jpg' } }),
+    prisma.user.create({ data: { name: 'Maker Beta', email: 'maker2@demo.com', password: passwordHash, avatar_url: '/avatars/maker-beta.jpg' } }),
+    prisma.user.create({ data: { name: 'Maker Gamma', email: 'maker3@demo.com', password: passwordHash, avatar_url: '/avatars/maker-gamma.jpg' } }),
+    prisma.user.create({ data: { name: 'Maker Delta', email: 'maker4@demo.com', password: passwordHash, avatar_url: '/avatars/maker-delta.jpg' } }),
   ]);
 
   const maria = await prisma.user.create({
-    data: { name: 'Maria Silva', email: 'maria@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=maria' },
+    data: { name: 'Maria Silva', email: 'maria@demo.com', password: passwordHash, avatar_url: '/avatars/maria-silva.jpg' },
   });
 
   const joao = await prisma.user.create({
-    data: { name: 'João Santos', email: 'joao@demo.com', password: passwordHash, avatar_url: 'https://i.pravatar.cc/150?u=joao' },
+    data: { name: 'João Santos', email: 'joao@demo.com', password: passwordHash, avatar_url: '/avatars/joao-santos.jpg' },
   });
 
   const createdProducts: { id: number }[] = [];
@@ -104,7 +97,7 @@ async function main() {
         print_time: p.print_time,
         user_id: maker.id,
         images: {
-          create: [{ url: PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length] }],
+          create: [{ url: `/products/${p.slug}.jpg` }],
         },
         reviews: {
           create: [{ rating: Math.round(p.rating) }],
@@ -113,8 +106,8 @@ async function main() {
           ? {
               stl_file: {
                 create: {
-                  url: STL_SAMPLES[i % STL_SAMPLES.length],
-                  filename: `${p.title.toLowerCase().replace(/\s+/g, '-')}.stl`,
+                  url: `/models/${p.slug}.stl`,
+                  filename: `${p.slug}.stl`,
                 },
               },
             }

@@ -1,0 +1,27 @@
+name: Start Release
+
+# Deprecated: use Auto Release Sync (push em develop ou workflow_dispatch).
+# Mantido como atalho manual para forçar recálculo semver + PR develop → release.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trigger-sync:
+    name: trigger-sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Auto Release Sync
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'auto-release-sync.yml',
+              ref: 'develop',
+            });
+            core.notice('Auto Release Sync disparado. Verifique PR develop → release/*.');

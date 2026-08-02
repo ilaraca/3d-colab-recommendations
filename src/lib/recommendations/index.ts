@@ -4,3 +4,7 @@ export * from './context';
 export * from './encode';
 export * from './similarity';
 export * from './recommend';
+export * from './training-data';
+export * from './model';
+export * from './model-loader';
+export * from './ml-recommend';

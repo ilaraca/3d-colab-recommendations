@@ -1,0 +1,106 @@
+name: Auto Release PR
+
+on:
+  push:
+    branches:
+      - 'release/**'
+      - 'hotfix/**'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch de release/hotfix (ex: release/1.0.0)'
+        required: true
+        type: string
+        default: release/1.0.0
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr-to-main:
+    name: open-pr-to-main
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Definir branch de origem
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            HEAD="${{ github.event.inputs.branch }}"
+          else
+            HEAD="${GITHUB_REF_NAME}"
+          fi
+          echo "head=${HEAD}" >> "$GITHUB_OUTPUT"
+          VERSION="${HEAD#release/}"
+          VERSION="${VERSION#hotfix/}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Criar ou confirmar PR para main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const head = '${{ steps.meta.outputs.head }}';
+            const version = '${{ steps.meta.outputs.version }}';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const isHotfix = head.startsWith('hotfix/');
+            const title = isHotfix
+              ? `hotfix: v${version}`
+              : `release: v${version}`;
+
+            try {
+              const { data: existing } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${head}`,
+                base: 'main',
+                state: 'open',
+              });
+
+              if (existing.length > 0) {
+                core.info(`PR #${existing[0].number} já aberto: ${head} → main`);
+                core.info(existing[0].html_url);
+                return;
+              }
+
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                title,
+                head,
+                base: 'main',
+                body: [
+                  `## ${isHotfix ? 'Hotfix' : 'Release'} v${version}`,
+                  '',
+                  `PR automático: \`${head}\` → \`main\` via workflow **Auto Release PR**.`,
+                  '',
+                  '### Checklist',
+                  '- [ ] CI verde (`lint-test-build` + `validate-branch-flow`)',
+                  '- [ ] Aprovação do maintainer (@ilaraca) — **obrigatória para merge em `main`**',
+                  isHotfix
+                    ? '- [ ] Back-merge em `develop` após publicar'
+                    : '- [ ] CHANGELOG / notas de release revisadas',
+                  `- [ ] Após merge: tag \`v${version}\` e GitHub Release criados automaticamente`,
+                  '',
+                  '### Git Flow',
+                  isHotfix
+                    ? `\`${head}\` → \`main\` (produção) → back-merge \`develop\``
+                    : `\`develop\` → \`${head}\` → \`main\` (produção)`,
+                  '',
+                  `> Gerado automaticamente no push de \`${head}\`.`,
+                ].join('\n'),
+              });
+
+              core.notice(`PR criado: #${pr.number} — ${pr.html_url}`);
+            } catch (error) {
+              const hint = [
+                'Falha ao criar PR de release/hotfix automaticamente.',
+                'Habilite em Settings → Actions → General:',
+                '  • Workflow permissions: Read and write',
+                '  • Allow GitHub Actions to create and approve pull requests',
+                '',
+                `Erro: ${error.message}`,
+              ].join('\n');
+              core.setFailed(hint);
+            }

@@ -50,7 +50,13 @@ export function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
       {showPreview && product.stl_file?.url ? (
         <StlPreview url={product.stl_file.url} />
       ) : product.images?.[0] ? (
-        <Image src={product.images[0].url} alt={product.title} fill className="object-cover" />
+        <Image
+          src={product.images[0].url}
+          alt={product.title}
+          fill
+          sizes={viewMode === 'list' ? '192px' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'}
+          className="object-cover"
+        />
       ) : (
         <div className="flex h-full items-center justify-center">
           <Box className="h-12 w-12 text-muted-foreground" />
