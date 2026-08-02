@@ -38,7 +38,7 @@ Recomendar produtos com base no **histórico de compras** e **atributos do produ
 |------|----------|
 | Média dos vetores comprados | Média dos produtos em `orderItem` (pedidos `completed`) |
 | Sem compras: só idade | Sem compras: categorias mais vistas + produtos populares |
-| — | Sinal extra: `trust_score` do maker favorito (opcional) |
+| — | `trust_score` do maker favorito *(planejado, não implementado)* |
 
 ## Fontes de dados (Prisma)
 
@@ -58,7 +58,7 @@ order {
 purchase { user_id, product_id, status }
 ```
 
-> **Decisão:** usar `orderItem` como fonte primária (fluxo principal de compra). `purchase` como fallback se houver dados legados.
+> **Decisão:** usar `orderItem` como fonte primária (fluxo principal de compra). A tabela `purchase` existe no schema, mas **não é usada** pelo pipeline ML atual.
 
 ### Produtos elegíveis
 
@@ -72,10 +72,11 @@ product {
 
 | Local | Componente | Comportamento |
 |-------|------------|---------------|
-| `/marketplace` | `RecommendationsSection` | Carrossel "Recomendados para você" (usuário logado) |
+| `/marketplace` | `RecommendationsSection` | Carrossel "Recomendados para você" (usuário logado) + toggle Auto/Content/ML/Ambos |
 | `/products/[id]` | `SimilarProducts` | Top 4 produtos similares (content-based ou score NN) |
-| `/profile` | Tab pedidos / dashboard | "Continue explorando" com sugestões |
-| `/cart` | Opcional Fase 2+ | Cross-sell antes do checkout |
+| `/learn` | Laboratório ML | 5 abas: Passo a passo, Visão geral, Vetores, Treino TF, Comparar |
+| `/profile` | — | *(planejado)* "Continue explorando" com sugestões |
+| `/cart` | — | *(planejado Fase 2+)* Cross-sell antes do checkout |
 
 ## Fluxo de dados
 
@@ -122,5 +123,5 @@ product {
 | Fase | Novas deps |
 |------|------------|
 | 1 | Nenhuma |
-| 2 | `@tensorflow/tfjs-node` |
+| 2 | `@tensorflow/tfjs` (padrão); `@tensorflow/tfjs-node` opcional (`TFJS_USE_NODE=1`) |
 | 3 | API de embeddings (OpenAI/Cohere) ou `@xenova/transformers` |

@@ -551,20 +551,24 @@ Por isso a Fase 3 permanece como **trabalho futuro** documentado, e não como c�
 
 ## 7. Laboratório interativo `/learn`
 
-A rota **http://localhost:3000/learn** é a camada educacional do projeto. Ela expõe cada etapa do pipeline numa interface visual, usando **os mesmos dados** do marketplace.
+A rota **http://localhost:3000/learn** é a camada educacional do projeto. Ela expõe cada etapa do pipeline numa interface visual com **5 abas**, usando **os mesmos dados** do marketplace.
 
 ### Mapa do laboratório
 
 ```mermaid
 flowchart TB
-    LAB["/learn"] --> T1["Aba: Visão geral"]
+    LAB["/learn"] --> T0["Aba: Passo a passo"]
+    LAB --> T1["Aba: Visão geral"]
     LAB --> T2["Aba: Vetores"]
     LAB --> T3["Aba: Treino TF"]
     LAB --> T4["Aba: Comparar"]
 
-    T1 --> T1A["Pipeline em 5 passos"]
-    T1 --> T1B["Quiz em 4 trilhas<br/>44 perguntas"]
-    T1 --> T1C["Missões guiadas"]
+    T0 --> T0A["Method Explorer<br/>20 lições do pipeline"]
+    T0 --> T0B["Código, variáveis<br/>e output por passo"]
+
+    T1 --> T1A["Pipeline em 6 fases"]
+    T1 --> T1B["Quiz em 4 trilhas<br/>46 perguntas"]
+    T1 --> T1C["Missões guiadas<br/>9 missões"]
 
     T2 --> T2A["Seleção de persona"]
     T2 --> T2B["Gráfico de barras<br/>do vetor"]
@@ -584,27 +588,32 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A["1. Visão geral<br/>entender o pipeline"] --> B["2. Quiz<br/>testar compreensão"]
-    B --> C["3. Vetores<br/>ver Maria vs João"]
-    C --> D["4. Treino TF<br/>rodar model.fit"]
-    D --> E["5. Overfit<br/>treinar com 50+ épocas"]
-    E --> F["6. Aplicar<br/>enviar modelo ao servidor"]
-    F --> G["7. Comparar<br/>content vs ML"]
-    G --> H["8. Marketplace<br/>toggle Ambos"]
+    A["1. Passo a passo<br/>Method Explorer"] --> B["2. Visão geral<br/>pipeline + missões"]
+    B --> C["3. Quiz<br/>testar compreensão"]
+    C --> D["4. Vetores<br/>Maria vs João"]
+    D --> E["5. Treino TF<br/>rodar model.fit"]
+    E --> F["6. Overfit<br/>treinar com 50+ épocas"]
+    F --> G["7. Aplicar<br/>enviar modelo ao servidor"]
+    G --> H["8. Comparar<br/>content vs ML"]
+    H --> I["9. Marketplace<br/>toggle Ambos"]
 ```
 
-### Aba 1 — Visão geral
+### Aba — Passo a passo (Method Explorer)
 
-Apresenta o pipeline em cinco cartões (contexto → encode → dataset → treino → inferência) e traz dois recursos de acompanhamento:
+Mapa de **20 lições** do pipeline real (`GET /api/learn/method-traces`): cada lição mostra código, variáveis de entrada, fórmula (quando aplicável) e output calculado — das 6 fases (Dados → Representação → Treinamento → Persistência → Inferência → Entrega).
 
-#### Quiz em 4 trilhas (44 perguntas)
+### Aba — Visão geral
+
+Apresenta o pipeline em **seis fases** e traz recursos de acompanhamento:
+
+#### Quiz em 4 trilhas (46 perguntas)
 
 Cada trilha é corrigida separadamente, exige **70% de acertos** para ser aprovada e mostra a explicação de cada alternativa depois da correção. O progresso fica no `localStorage`, e há um botão para refazer uma trilha isolada.
 
 | Trilha | Perguntas | O que cobre |
 |--------|-----------|-------------|
-| **Analogias** | 11 | Biblioteca, ficha resumida, prova de adivinhação, receita com temperos, médico em formação, compatibilidade de perfis, cardápio do dia, lista telefônica |
-| **Vocabulário** | 12 | encode, one-hot, normalizar, cosseno, label, época, learning rate, `loss` vs `val_loss`, sigmoid, dropout, cold start, overfit |
+| **Analogias** | 12 | Biblioteca, ficha resumida, prova de adivinhação, receita com temperos, médico em formação, compatibilidade de perfis, cardápio do dia |
+| **Vocabulário** | 13 | encode, one-hot, normalizar, cosseno, label, época, learning rate, `loss` vs `val_loss`, sigmoid, dropout, cold start, overfit |
 | **Métodos — Fase 1** | 9 | `buildContext`, `normalize`, `oneHotWeighted`, `encodeProduct`, `encodeUserFromPurchases`, `cosineSimilarity` |
 | **Métodos — Fase 2** | 12 | `createTrainingData`, `encodeUserLeaveOneOut`, `splitByUser`, `createModel`, `trainRecommendationModel`, `predictBatch`, `scoreProductsML` |
 
@@ -621,12 +630,13 @@ Exemplos de pergunta, uma de cada trilha:
 
 > As alternativas são rotacionadas por um deslocamento derivado do `id` da pergunta, para que a resposta certa não fique sempre na mesma posição. A rotação é determinística, então as respostas salvas continuam valendo depois de recarregar a página.
 
-#### Missões guiadas (8)
+#### Missões guiadas (9)
 
 Progresso salvo no `localStorage`:
 
 | Missão | Como completar |
 |--------|---------------|
+| Percorrer um método | Abrir Passo a passo e percorrer até o último passo de uma lição |
 | Explorar vetores | Abrir a aba Vetores |
 | Comparar Maria e João | Visualizar as duas personas |
 | Treinar no browser | Executar um treino |
@@ -636,7 +646,7 @@ Progresso salvo no `localStorage`:
 | Quiz do pipeline | Ser aprovado em uma trilha |
 | Quiz completo | Ser aprovado nas quatro trilhas |
 
-### Aba 2 — Vetores
+### Aba — Vetores
 
 ```mermaid
 flowchart LR
@@ -656,7 +666,7 @@ O que observar:
 
 Este é o momento de entender: **personalização não é magia, é média de vetores**.
 
-### Aba 3 — Treino TF
+### Aba — Treino TF
 
 O playground roda TensorFlow.js **no navegador**, com a mesma arquitetura do backend.
 
@@ -693,7 +703,7 @@ Abaixo do playground, a **tabela de pares de treino** mostra exemplos concretos 
 
 Isso torna tangível o que é "um exemplo supervisionado".
 
-### Aba 4 — Comparar
+### Aba — Comparar
 
 Executa as duas fases lado a lado para a mesma persona:
 
@@ -717,6 +727,7 @@ A seção de diferenças responde à pergunta central: **os dois algoritmos conc
 | `GET /api/learn/dataset` | Dataset completo com split treino/validação |
 | `GET /api/learn/vectors?email=` | Vetor do perfil + histórico de compras |
 | `GET /api/learn/demo-users` | Personas disponíveis |
+| `GET /api/learn/method-traces` | 20 lições passo a passo do pipeline ML |
 | `GET /api/learn/model-status` | Se existe modelo salvo + metadata |
 | `GET /api/learn/training-pairs` | Pares (usuário, produto, label) legíveis |
 | `GET /api/learn/recommendations?email=&source=` | Recomendações para comparação |
@@ -741,23 +752,21 @@ O modo **Ambos** é o mais didático para demonstração ao vivo: mostra as duas
 
 ---
 
-## 8. Como rodar e testar
+## 8. Como rodar e testar (ML)
 
-### Setup inicial
+> Setup completo (Docker, banco, variáveis): ver [README raiz](../../README.md).
+
+### Setup mínimo para o pipeline ML
 
 ```bash
-# 1. Banco de dados
-docker compose up -d
+# Banco + seed (local ou via Docker — ver README raiz)
+npm run db:setup
 
-# 2. Dependências e schema
-npm install
-npx prisma migrate dev --name init
-npm run seed
-
-# 3. Treinar o modelo da Fase 2 (opcional)
+# Treinar o modelo da Fase 2 (opcional, necessário para source=ml)
 npm run recommendations:train
+# Aceleração opcional: TFJS_USE_NODE=1 npm run recommendations:train
 
-# 4. Rodar
+# Rodar
 npm run dev
 ```
 
@@ -848,8 +857,11 @@ src/
 │   ├── tensorflow.ts         # Abstração tfjs vs tfjs-node
 │   ├── browser-model.ts      # Laboratório: treino no navegador + upload
 │   ├── learn-data.ts         # Laboratório: dataset, vetores, pares legíveis
+│   ├── education-traces.ts   # Laboratório: lições e traces de métodos
+│   ├── education-pipeline-lessons.ts  # 16 lições ilustradas do pipeline
+│   ├── lab-concepts.ts       # Glossário e conceitos do lab
 │   ├── feature-descriptions.ts # Laboratório: textos das tooltips
-│   └── quiz-questions.ts     # Laboratório: 4 trilhas de perguntas + rotação
+│   └── quiz-questions.ts     # Laboratório: 4 trilhas (46 perguntas) + rotação
 │
 ├── app/api/
 │   ├── recommendations/route.ts    # API pública de recomendações
@@ -857,6 +869,7 @@ src/
 │       ├── dataset/route.ts
 │       ├── vectors/route.ts
 │       ├── demo-users/route.ts
+│       ├── method-traces/route.ts
 │       ├── model-status/route.ts
 │       ├── training-pairs/route.ts
 │       ├── recommendations/route.ts
@@ -869,12 +882,17 @@ src/
 │   ├── similar-products.tsx         # Produtos similares
 │   └── learn/
 │       ├── learn-lab.tsx            # Abas e orquestração
+│       ├── method-explorer.tsx      # Aba Passo a passo
+│       ├── concept-panel.tsx        # Visão geral do pipeline
+│       ├── pipeline-flowchart.tsx   # Fluxograma das fases
 │       ├── vector-explorer.tsx      # Aba Vetores
 │       ├── training-playground.tsx  # Aba Treino TF
 │       ├── recommendation-comparator.tsx # Aba Comparar
 │       ├── dataset-explorer.tsx     # Tabela de pares
 │       ├── learn-quiz.tsx           # Quiz por trilhas + correção
 │       ├── learning-missions.tsx    # Missões + persistência
+│       ├── feature-tooltip.tsx      # Tooltips de features
+│       ├── glossary-label.tsx       # Rótulos com glossário
 │       └── charts.tsx               # Gráficos SVG (loss e vetor)
 │
 └── scripts/
@@ -933,22 +951,6 @@ flowchart LR
 - [Fase 2 — Plano](./phase-02-neural-network/plan.md) · [Spec](./phase-02-neural-network/spec.md)
 - [Fase 3 — Plano](./phase-03-advanced/plan.md) · [Spec](./phase-03-advanced/spec.md)
 - [prisma/schema.prisma](../../prisma/schema.prisma) — modelos de dados
-
-### Referência externa (curso)
-
-Pipeline base: `modulo01-fundamentos-de-ia-e-llms-para-programadores/exemplo-01-ecommerce-recomendations-z/parte05-ecommerce-recomendations-with-tensorflow/src/workers/modelTrainingWorker.js`
-
-Diferenças em relação ao demo original:
-
-| Aspecto | Demo do curso | Este projeto |
-|---------|--------------|--------------|
-| Dados | JSON estático (5 usuários, 10 produtos) | PostgreSQL via Prisma |
-| Execução | Web Worker no navegador | API Route + script CLI + navegador |
-| Leave-one-out | Ausente (vazamento) | Implementado |
-| Split | Aleatório por linha | Por usuário |
-| Arquitetura | 128 → 64 → 32 | 64 → 32 → 1 (menor, menos dados) |
-| Fallback | Nenhum | Content-based e populares |
-| Camada educacional | Nenhuma | Rota `/learn` completa |
 
 ### Glossário
 
