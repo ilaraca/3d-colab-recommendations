@@ -62,18 +62,22 @@ git push origin feature/minha-feature
 **Opção A — GitHub Actions (recomendado)**
 
 1. Acesse **Actions → Start Release → Run workflow**
-2. Informe a versão semver (ex: `1.0.0`)
-3. O workflow cria `release/1.0.0` e abre PR → `main`
+2. Informe a versão semver (ex: `1.1.0`)
+3. O workflow cria `release/X.Y.Z` **a partir de `develop`** (com bump de versão)
+4. **Automático:** workflow **Auto Release PR** abre PR `release/X.Y.Z` → `main`
 
 **Opção B — manual**
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b release/1.0.0
-git push -u origin release/1.0.0
-# Abrir PR release/1.0.0 → main no GitHub
+git checkout -b release/1.1.0
+# bump package.json se necessário
+git push -u origin release/1.1.0
+# Auto Release PR abre PR → main no push
 ```
+
+> Não há PR `develop` → `release`: a release é **criada a partir** da develop (snapshot + estabilização).
 
 ### Publicar em produção
 
@@ -101,8 +105,9 @@ git push -u origin hotfix/1.0.1
 | `CI` | PR e push em `develop`/`release/*` | lint, testes, build |
 | `Git Flow Guard` | Todo PR | Valida origem/destino das branches |
 | `Auto Pull Request` | Push em `feature/**` | Abre PR automático → `develop` |
+| `Auto Release PR` | Push em `release/**` ou `hotfix/**` | Abre PR automático → `main` |
 | `Release` | Merge em `main` vindo de `release/*` ou `hotfix/*` | Cria tag + GitHub Release |
-| `Start Release` | Manual (`workflow_dispatch`) | Cria branch release e PR → main |
+| `Start Release` | Manual (`workflow_dispatch`) | Cria branch `release/X.Y.Z` a partir de `develop` |
 
 ### Permissões do Actions (obrigatório para auto-PR)
 
@@ -112,11 +117,11 @@ Em **Settings → Actions → General → Workflow permissions**:
 2. Marque **Allow GitHub Actions to create and approve pull requests**
 3. Salve
 
-Sem isso, o workflow `Auto Pull Request` falha ao criar o PR (CI passa, mas o PR não abre).
+Sem isso, os workflows **Auto Pull Request** e **Auto Release PR** falham ao criar PRs.
 
-**Re-executar manualmente:** Actions → Auto Pull Request → Run workflow → branch `feature/ml-learning-lab`
-
-**Fallback manual:** no GitHub, clique em **Compare & pull request** no banner amarelo da branch.
+**Re-executar manualmente:**
+- Features: Actions → **Auto Pull Request** → branch `feature/...`
+- Releases: Actions → **Auto Release PR** → branch `release/X.Y.Z`
 
 ## Proteção de branches (setup único)
 

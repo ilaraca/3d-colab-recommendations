@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   create-release-branch:
@@ -33,10 +32,20 @@ jobs:
             exit 1
           fi
 
-      - name: Criar branch release
+      - name: Bump version no package.json
         env:
           VERSION: ${{ github.event.inputs.version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = process.env.VERSION;
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Criar branch release a partir de develop
+        env:
+          VERSION: ${{ github.event.inputs.version }}
         run: |
           BRANCH="release/${VERSION}"
 
@@ -48,30 +57,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
+          git add package.json
+          git commit -m "chore(release): bump version to ${VERSION}"
           git push origin "$BRANCH"
-
-      - name: Abrir PR release → main
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH="release/${VERSION}"
-          gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "release: v${VERSION}" \
-            --body "$(cat <<EOF
-          ## Release v${VERSION}
-
-          PR gerado automaticamente pelo workflow **Start Release**.
-
-          ### Checklist
-          - [ ] CI verde (\`lint-test-build\` + \`validate-branch-flow\`)
-          - [ ] CHANGELOG / notas de release revisadas
-          - [ ] Aprovação do maintainer (@ilaraca) — **obrigatória para merge em \`main\`**
-          - [ ] Após merge: tag \`v${VERSION}\` e GitHub Release criados automaticamente
-
-          ### Git Flow
-          \`develop\` → \`release/${VERSION}\` → \`main\` (produção)
-          EOF
-          )"
+          echo "Branch ${BRANCH} criada a partir de develop."
+          echo "O workflow Auto Release PR abrirá o PR → main automaticamente."
