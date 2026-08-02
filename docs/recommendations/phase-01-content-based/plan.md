@@ -8,12 +8,12 @@ Entregar recomendações personalizadas **sem rede neural**, usando vetores de f
 
 ### Incluído
 
-- [ ] Módulo `src/lib/recommendations/` (context, encode, similarity, recommend)
-- [ ] API `GET /api/recommendations`
-- [ ] Componente `RecommendationsSection` no marketplace
-- [ ] Componente `SimilarProducts` na página de produto
-- [ ] Fallback para usuários não logados (produtos populares)
-- [ ] Testes unitários das funções de encode e similaridade
+- [x] Módulo `src/lib/recommendations/` (context, encode, similarity, recommend)
+- [x] API `GET /api/recommendations`
+- [x] Componente `RecommendationsSection` no marketplace
+- [x] Componente `SimilarProducts` na página de produto
+- [x] Fallback para usuários não logados (produtos populares)
+- [x] Testes unitários das funções de encode e similaridade
 - [ ] Testes de integração da API (mock Prisma ou DB de teste)
 
 ### Fora de escopo
@@ -81,13 +81,13 @@ Entregar recomendações personalizadas **sem rede neural**, usando vetores de f
 
 ## Critérios de pronto (Definition of Done)
 
-- [ ] Usuário logado com histórico vê produtos ordenados por relevância
-- [ ] Usuário sem histórico vê fallback (populares por nº de vendas ou reviews)
-- [ ] Produtos já comprados não aparecem
-- [ ] Produtos do próprio maker não aparecem
-- [ ] API responde em < 200ms com catálogo atual
-- [ ] Testes unitários passam no CI
-- [ ] Sem regressão no marketplace existente
+- [x] Usuário logado com histórico vê produtos ordenados por relevância
+- [x] Usuário sem histórico vê fallback (populares por nº de vendas ou reviews)
+- [x] Produtos já comprados não aparecem
+- [x] Produtos do próprio maker não aparecem
+- [x] API responde em < 200ms com catálogo atual
+- [x] Testes unitários passam no CI
+- [x] Sem regressão no marketplace existente
 
 ## Riscos e mitigações
 

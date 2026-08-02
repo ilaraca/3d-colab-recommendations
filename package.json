@@ -18,7 +18,12 @@
     "feature:new": "bash scripts/new-feature.sh",
     "studio": "prisma studio",
     "test": "jest",
-    "test:unit": "jest --testPathPattern=tests/unit"
+    "test:unit": "jest --testPathPattern=tests/unit",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:setup": "bash docker/setup.sh",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f app"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -42,6 +47,7 @@
     "prisma": "^5.10.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.0",
     "three": "^0.176.0",

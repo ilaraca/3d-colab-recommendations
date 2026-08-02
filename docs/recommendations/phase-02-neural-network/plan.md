@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Evoluir da similaridade de cosseno para um **modelo de classificação binária** (comprou / não comprou), portando o pipeline do demo TensorFlow.js para o servidor Node.js com `@tensorflow/tfjs-node`.
+Evoluir da similaridade de cosseno para um **modelo de classificação binária** (comprou / não comprou), com treino no **servidor** (`npm run recommendations:train`) e no **navegador** (laboratório `/learn`), usando `@tensorflow/tfjs` (com `@tensorflow/tfjs-node` opcional para acelerar).
 
 ## Pré-requisitos
 
@@ -14,21 +14,20 @@ Evoluir da similaridade de cosseno para um **modelo de classificação binária*
 
 ### Incluído
 
-- [ ] Dependência `@tensorflow/tfjs-node`
-- [ ] Módulos `training-data.ts`, `model.ts` em `lib/recommendations/`
-- [ ] Treino com leave-one-out (corrige vazamento do demo)
-- [ ] Persistência do modelo em disco ou object storage
-- [ ] Job de retreino (script CLI ou API admin)
-- [ ] API estendida: `source=ml` vs `source=content` (fallback)
-- [ ] Logs de treino (loss, accuracy por época)
-- [ ] Validação hold-out (80/20 por usuário)
+- [x] Dependência `@tensorflow/tfjs` (+ `@tensorflow/tfjs-node` opcional via `TFJS_USE_NODE=1`)
+- [x] Módulos `training-data.ts`, `model.ts`, `ml-recommend.ts`, `model-loader.ts`, `browser-model.ts`
+- [x] Treino com leave-one-out (corrige vazamento do demo)
+- [x] Persistência do modelo em disco (`models/recommendations/`)
+- [x] Job de retreino (`npm run recommendations:train`)
+- [x] API estendida: `source=auto|ml|content|both`
+- [x] Logs de treino (loss, accuracy por época)
+- [x] Validação hold-out (80/20 por usuário)
+- [x] Laboratório `/learn`: treino no browser + upload via `POST /api/learn/upload-model`
 
 ### Fora de escopo
 
-- Treino no browser (Web Worker)
 - Embeddings de texto (Fase 3)
 - Filtragem colaborativa user-user
-- UI de treino para usuário final (apenas admin/dev)
 
 ## Entregáveis
 
@@ -54,6 +53,8 @@ Evoluir da similaridade de cosseno para um **modelo de classificação binária*
 ### 1. Setup
 
 ```bash
+npm install @tensorflow/tfjs
+# Opcional — acelera treino no Node:
 npm install @tensorflow/tfjs-node
 ```
 
@@ -62,6 +63,8 @@ Adicionar script em `package.json`:
 ```json
 "recommendations:train": "tsx src/scripts/train-recommendation-model.ts"
 ```
+
+> O projeto usa `src/lib/recommendations/tensorflow.ts` para escolher entre `@tensorflow/tfjs` (padrão) e `@tensorflow/tfjs-node` (`TFJS_USE_NODE=1`).
 
 ### 2. Dataset (port do `createTrainingData`)
 
@@ -79,7 +82,8 @@ Arquitetura inicial (ajustável):
 
 ```
 Input (userVector + productVector)
-  → Dense 64, ReLU
+  → Dense 64, ReLU, L2 (0.01)
+  → Dropout 0.2
   → Dense 32, ReLU
   → Dense 1, Sigmoid
 ```
@@ -123,12 +127,13 @@ GET /api/recommendations?source=content # Fase 1
 
 ## Critérios de pronto
 
-- [ ] Modelo treina sem erro com dados de staging
-- [ ] Val loss não diverge (> 2× train loss = revisar)
-- [ ] Inferência < 500ms para catálogo < 500 produtos
-- [ ] Fallback automático para Fase 1 se modelo não existir
-- [ ] Leave-one-out implementado e testado
-- [ ] Produtos comprados excluídos na inferência (igual Fase 1)
+- [x] Modelo treina sem erro com dados de staging
+- [x] Val loss monitorada; early stopping com patience 5
+- [x] Inferência < 500ms para catálogo < 500 produtos
+- [x] Fallback automático para Fase 1 se modelo não existir
+- [x] Leave-one-out implementado e testado
+- [x] Produtos comprados excluídos na inferência (igual Fase 1)
+- [ ] Validar métricas vs baseline Fase 1 (Precision@K em staging)
 
 ## Riscos
 
